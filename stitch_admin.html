@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Public+Sans:ital,wght@0,700;0,900;1,700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bec9c0",
+                        "surface-container-high": "#e4e8f1",
+                        "tertiary-fixed-dim": "#ffb3ae",
+                        "tertiary-container": "#ae001b",
+                        "surface-container-highest": "#dee3eb",
+                        "secondary-fixed-dim": "#f5bf2a",
+                        "on-primary-fixed": "#002113",
+                        "on-primary-fixed-variant": "#005235",
+                        "on-tertiary-fixed": "#410004",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#2c3137",
+                        "outline": "#6f7a72",
+                        "tertiary-fixed": "#ffdad7",
+                        "background": "#f8f9ff",
+                        "primary-fixed": "#a2f3c8",
+                        "on-surface": "#171c22",
+                        "surface-dim": "#d6dae3",
+                        "on-background": "#171c22",
+                        "surface-tint": "#146b4a",
+                        "inverse-on-surface": "#edf1fa",
+                        "on-secondary-container": "#705400",
+                        "primary-container": "#006241",
+                        "primary": "#00482f",
+                        "on-tertiary-container": "#ffb9b4",
+                        "surface-container": "#eaeef7",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#87d7ad",
+                        "on-primary-container": "#8bdbb1",
+                        "secondary": "#785a00",
+                        "on-secondary": "#ffffff",
+                        "tertiary": "#820011",
+                        "secondary-container": "#fec733",
+                        "surface-container-low": "#f0f4fd",
+                        "surface": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#ffdf9a",
+                        "surface-bright": "#f8f9ff",
+                        "inverse-primary": "#87d7ad",
+                        "on-secondary-fixed": "#251a00",
+                        "on-tertiary-fixed-variant": "#930015",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#3f4943",
+                        "on-secondary-fixed-variant": "#5a4300",
+                        "surface-variant": "#dee3eb",
+                        "on-tertiary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Public Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Public Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-on-surface">
+<!-- SideNavBar Component -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-slate-50 dark:bg-slate-900 z-40 py-6 border-r border-slate-200/50 dark:border-slate-800/50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
+<img alt="Municipal Admin Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACTxKH_K3BS3qpWHmyVur9aCpmtUdtrh2FIdgHLDpwBr4HpXLeJDWn0CW6bvpeVBFyUN-kK3Urvqo4llVQh49FRsewVmvMI8gHVPpYta2rqwztM0fJAEDZyzLVPuAn2k14XZQ_-CN0_PO8LYz7H0-C6FmUc5TPqRnLMt4FMpc2Im8xof4ODAhbqv2vA0EYdVdKiGgwe0aWMYrzUlOSVzlXGde5ZOYxosAVQ0vupm8rfGa8omEKkMm9oDBet2MfWwp7L1h44tolMjad"/>
+</div>
+<div>
+<h1 class="text-xl font-black text-emerald-900 dark:text-emerald-500 tracking-tight leading-none">CleanCity Admin</h1>
+<p class="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Yaoundé District</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col font-['Public_Sans'] font-semibold text-sm">
+<a class="flex items-center gap-3 px-6 py-4 text-emerald-900 dark:text-emerald-400 font-bold border-r-4 border-emerald-900 dark:border-emerald-400 bg-emerald-50/50 dark:bg-emerald-900/10 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span>Report Management</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Team Assignment</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-4 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Tracking History</span>
+</a>
+<div class="mt-auto">
+<a class="flex items-center gap-3 px-6 py-4 text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</div>
+</nav>
+</aside>
+<!-- TopAppBar Component -->
+<header class="fixed top-0 right-0 left-64 h-16 z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md shadow-sm border-b border-slate-200/50 dark:border-slate-800/50 flex justify-between items-center px-8 w-full">
+<div class="flex items-center gap-4 flex-1">
+<div class="flex items-center bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-lg w-full max-w-md">
+<span class="material-symbols-outlined text-slate-400 text-sm mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none text-slate-700 dark:text-slate-200 text-sm focus:ring-0 w-full placeholder:text-slate-400" placeholder="Search reports..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-500 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
+<img alt="Admin User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACTxKH_K3BS3qpWHmyVur9aCpmtUdtrh2FIdgHLDpwBr4HpXLeJDWn0CW6bvpeVBFyUN-kK3Urvqo4llVQh49FRsewVmvMI8gHVPpYta2rqwztM0fJAEDZyzLVPuAn2k14XZQ_-CN0_PO8LYz7H0-C6FmUc5TPqRnLMt4FMpc2Im8xof4ODAhbqv2vA0EYdVdKiGgwe0aWMYrzUlOSVzlXGde5ZOYxosAVQ0vupm8rfGa8omEKkMm9oDBet2MfWwp7L1h44tolMjad"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="ml-64 pt-16 min-h-screen">
+<div class="p-8 space-y-8">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-2xl font-black text-emerald-900 dark:text-emerald-400 font-['Public_Sans'] tracking-tight">Dashboard Overview</h2>
+<p class="text-sm text-slate-500">Real-time status of waste management in the district</p>
+</div>
+<div class="text-sm font-medium text-slate-500 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg border border-slate-200/50">
+                Oct 24, 2023
+            </div>
+</div>
+<!-- Summary Stats: Bento Style -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] border-b-4 border-primary transition-transform hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-4">
+<span class="p-3 bg-primary/10 rounded-xl">
+<span class="material-symbols-outlined text-primary" data-icon="fact_check">fact_check</span>
+</span>
+<span class="text-xs font-bold text-primary px-2 py-1 bg-primary/5 rounded">+12%</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium mb-1">Total Reports</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tight">1,284</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] border-b-4 border-tertiary transition-transform hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-4">
+<span class="p-3 bg-tertiary/10 rounded-xl">
+<span class="material-symbols-outlined text-tertiary" data-icon="pending_actions">pending_actions</span>
+</span>
+<span class="text-xs font-bold text-tertiary px-2 py-1 bg-tertiary/5 rounded">High Priority</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium mb-1">Pending</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tight">42</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] border-b-4 border-secondary transition-transform hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-4">
+<span class="p-3 bg-secondary/10 rounded-xl">
+<span class="material-symbols-outlined text-secondary" data-icon="moped">moped</span>
+</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium mb-1">In Progress</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tight">156</h3>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] border-b-4 border-primary-fixed-dim transition-transform hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-4">
+<span class="p-3 bg-primary/10 rounded-xl">
+<span class="material-symbols-outlined text-primary" data-icon="task_alt">task_alt</span>
+</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium mb-1">Resolved</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tight">1,086</h3>
+</div>
+</section>
+<!-- Main Grid: Table & Map -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Active Reports Table -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] overflow-hidden border border-slate-200/50">
+<div class="p-6 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="text-xl font-bold text-on-surface">Active Reports</h3>
+<button class="text-sm font-bold text-primary flex items-center gap-1 hover:underline">
+                        View All <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low/50">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Report ID</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Citizen</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Category</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Priority</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-primary font-bold">#CC-9021</td>
+<td class="px-6 py-4 text-sm font-medium">Jean-Paul N.</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Illegal Dumping</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full w-[85%]"></div>
+</div>
+<span class="text-xs font-bold text-tertiary">8.5</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Pending</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm">Assign</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-primary font-bold">#CC-8845</td>
+<td class="px-6 py-4 text-sm font-medium">Amadou T.</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Waste Overflow</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[62%]"></div>
+</div>
+<span class="text-xs font-bold text-secondary">6.2</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-fixed text-on-secondary-fixed-variant">In Progress</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-xs font-bold hover:bg-surface-container-highest transition-all">Details</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-primary font-bold">#CC-8722</td>
+<td class="px-6 py-4 text-sm font-medium">Marie B.</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Drainage Block</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full w-[94%]"></div>
+</div>
+<span class="text-xs font-bold text-tertiary">9.4</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed text-on-tertiary-fixed-variant">Urgent</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-sm">Assign</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Hotspot Map Widget -->
+<div class="bg-surface-container-lowest rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] overflow-hidden flex flex-col h-full border border-slate-200/50">
+<div class="p-6 border-b border-outline-variant/10">
+<h3 class="text-xl font-bold text-on-surface">Hotspot Map</h3>
+<p class="text-xs text-on-surface-variant mt-1">Live coverage of urgent alerts in Yaoundé</p>
+</div>
+<div class="flex-1 relative min-h-[300px]">
+<img alt="stylized map" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_TttPuXg_oGhQEymjMPdSQI-YqtfkR84TFTIY9hJhSDpzEgtLUmQE_Gs21WEWi4KywW3t3H_Vorw-aOkqZJRszEjAb_T1flVDIHSuEqt5KEEFDMoqDE8oywqdwphOXspk-HKA0snvlQLp_fCVX3LABxd1bjYIWsB7Z7QfPvo5-YXouqtJR3k9bS-0OQ8mB8oLMW6gmvqesF9x-MUcNSnbNjTSukirINTbHrNF1K-abwIpV9lUUln6uaCIdB6u4UvIKwiYV3AsAvD9"/>
+<div class="absolute top-1/4 left-1/3 w-8 h-8">
+<div class="absolute inset-0 bg-tertiary rounded-full animate-ping opacity-75"></div>
+<div class="absolute inset-2 bg-tertiary rounded-full border-2 border-white shadow-lg"></div>
+</div>
+<div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg shadow-xl border border-outline-variant/10">
+<div class="space-y-2">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-tertiary rounded-full"></span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Critical Focus</span>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 bg-surface-container-low">
+<button class="w-full bg-emerald-900 text-on-primary py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="fullscreen">fullscreen</span>
+                        Enter Map View
+                    </button>
+</div>
+</div>
+</section>
+<!-- Secondary Stats: Analytics Teaser -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+<div class="bg-emerald-900 p-8 rounded-2xl text-on-primary flex flex-col justify-between min-h-[200px]">
+<div>
+<h4 class="text-lg font-bold opacity-80 mb-2 font-['Public_Sans']">Efficiency Rating</h4>
+<p class="text-4xl font-black">94.2%</p>
+</div>
+<div class="flex items-end justify-between">
+<div class="flex gap-1 h-12 items-end">
+<div class="w-2 bg-white/20 h-1/2 rounded-full"></div>
+<div class="w-2 bg-white/40 h-3/4 rounded-full"></div>
+<div class="w-2 bg-white/20 h-2/3 rounded-full"></div>
+<div class="w-2 bg-white h-full rounded-full"></div>
+<div class="w-2 bg-white/60 h-4/5 rounded-full"></div>
+</div>
+<span class="text-xs font-bold bg-white/10 px-2 py-1 rounded-full">+2.4 pts this week</span>
+</div>
+</div>
+<div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-2xl shadow-[0_8px_24px_rgba(23,28,34,0.04)] flex items-center justify-between gap-8 border border-slate-200/50">
+<div class="flex-1">
+<h4 class="text-xl font-bold text-on-surface mb-2 font-['Public_Sans']">Resource Allocation</h4>
+<p class="text-on-surface-variant text-sm max-w-md">Currently optimizing waste collection routes based on live traffic and report volume in Mvolyé and Bastos districts.</p>
+<div class="mt-6 flex gap-8">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-outline uppercase tracking-widest">Active Units</span>
+<span class="text-2xl font-black text-on-surface">24/30</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-outline uppercase tracking-widest">Est. Response</span>
+<span class="text-2xl font-black text-on-surface">14 min</span>
+</div>
+</div>
+</div>
+<div class="w-32 h-32 hidden md:block">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e4e8f1" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#00482f" stroke-dasharray="80, 100" stroke-width="3"></path>
+<text class="font-black text-[8px]" fill="#171c22" text-anchor="middle" transform="rotate(90 18 18)" x="18" y="20.35">80%</text>
+</svg>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>
