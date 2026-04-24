@@ -29,6 +29,8 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'phone_number' => '+237' . fake()->numerify('6########'), // Realistic Cameroon phone number
+            'role' => 'citizen',
             'remember_token' => Str::random(10),
         ];
     }
