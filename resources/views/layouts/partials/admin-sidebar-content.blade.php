@@ -1,6 +1,6 @@
 <div class="px-6 mb-8 flex items-center gap-3">
-    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-        <span class="material-symbols-outlined text-primary" data-icon="recycling">recycling</span>
+    <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-outline-variant/10 shadow-sm overflow-hidden p-1">
+        <img src="{{ asset('img/logo.png') }}" alt="CleanCity Logo" class="w-full h-full object-contain">
     </div>
     <div>
         <h1 class="text-xl font-black text-primary font-heading tracking-tight leading-none">CleanCity</h1>
@@ -29,10 +29,6 @@
         <span>Hotspot Analysis</span>
     </a>
 
-    <a href="{{ route('admin.staff.index') }}" class="flex items-center gap-3 px-6 py-4 transition-colors {{ request()->routeIs('admin.staff.*') ? 'text-primary border-r-4 border-primary bg-primary/5' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
-        <span class="material-symbols-outlined" data-icon="group">group</span>
-        <span>Staff & Teams</span>
-    </a>
 
     <a href="{{ route('admin.audit') }}" class="flex items-center gap-3 px-6 py-4 transition-colors {{ request()->routeIs('admin.audit') ? 'text-primary border-r-4 border-primary bg-primary/5' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
         <span class="material-symbols-outlined" data-icon="history">history</span>

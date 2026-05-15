@@ -52,6 +52,10 @@
                     @if($report->address)
                         <p class="text-sm mt-1 ml-6">{{ $report->address }}</p>
                     @endif
+                    
+                    <div class="mt-6 rounded-2xl overflow-hidden border border-outline-variant/10 aspect-video relative">
+                        <img src="https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+ff0000({{ $report->longitude }},{{ $report->latitude }})/{{ $report->longitude }},{{ $report->latitude }},15,0/600x300?access_token={{ config('services.mapbox.access_token') }}" alt="Report Location" class="w-full h-full object-cover">
+                    </div>
                 </div>
             </div>
 

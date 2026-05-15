@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CleanCity - Login</title>
+    <link rel="icon" type="image/png" href="{{ asset('img/logo.png') }}">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,8 +27,8 @@
     <div class="w-full max-w-md">
         <!-- Logo & Branding -->
         <div class="text-center mb-8">
-            <div class="w-16 h-16 bg-primary rounded-2xl mx-auto flex items-center justify-center shadow-lg mb-4">
-                <span class="material-symbols-outlined text-white text-3xl" data-icon="recycling">recycling</span>
+            <div class="w-20 h-20 bg-white rounded-3xl mx-auto flex items-center justify-center shadow-lg mb-4 border border-outline-variant/10 p-2">
+                <img src="{{ asset('img/logo.png') }}" alt="CleanCity Logo" class="w-full h-full object-contain">
             </div>
             <h1 class="text-3xl font-black text-primary font-heading tracking-tight">CleanCity</h1>
             <p class="text-on-surface-variant text-sm font-medium">Digital Waste Management Platform</p>

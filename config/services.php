@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'mapbox' => [
+        'access_token' => env('MAPBOX_ACCESS_TOKEN'),
+        'tile_url' => env('MAPBOX_TILE_URL'),
+    ],
+
+    'fcm' => [
+        'service_account' => storage_path('app/firebase-auth.json'),
+        'project_id' => env('FCM_PROJECT_ID', 'clean-city-3a128'),
+    ],
+
 ];

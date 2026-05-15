@@ -28,7 +28,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/hotspots', [DashboardController::class, 'hotspots'])->name('hotspots');
     Route::get('/audit', [DashboardController::class, 'audit'])->name('audit');
 
-    // Staff Management
-    Route::get('/staff', [\App\Http\Controllers\Admin\StaffController::class, 'index'])->name('staff.index');
-    Route::post('/staff/{id}/update', [\App\Http\Controllers\Admin\StaffController::class, 'update'])->name('staff.update');
 });

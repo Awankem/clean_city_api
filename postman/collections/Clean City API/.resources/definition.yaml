@@ -1,0 +1,8 @@
+$kind: collection
+name: Clean City API
+description: API collection for the Clean City reporting platform
+variables:
+  - key: base_url
+    value: 'http://localhost:8000/api'
+    type: default
+    enabled: true

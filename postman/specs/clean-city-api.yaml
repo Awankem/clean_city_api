@@ -1,0 +1,598 @@
+openapi: 3.0.0
+info:
+  title: Clean City API
+  version: 1.0.0
+  description: >
+    REST API for the Clean City platform. Citizens can register, submit
+    environmental reports with photos, upvote reports, and track status
+    updates. Admins can manage categories and update report statuses.
+    Authentication is handled via Laravel Sanctum Bearer tokens.
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Register, login, logout, and user profile endpoints
+  - name: Reports
+    description: Submit, view, and interact with city reports
+  - name: Categories
+    description: Public category listing
+
+security: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+
+  schemas:
+    UserObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          example: jane@example.com
+        phone_number:
+          type: string
+          nullable: true
+          example: '+1234567890'
+        role:
+          type: string
+          enum:
+            - citizen
+            - admin
+          example: citizen
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CategoryObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Waste Management
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ReportImageObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        report_id:
+          type: integer
+          example: 3
+        image_path:
+          type: string
+          example: reports/photo1.jpg
+
+    StatusHistoryObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        report_id:
+          type: integer
+          example: 3
+        old_status:
+          type: string
+          example: pending
+        new_status:
+          type: string
+          example: in_progress
+        note:
+          type: string
+          nullable: true
+          example: Assigned to field team
+        changed_by:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/UserObject'
+        created_at:
+          type: string
+          format: date-time
+
+    ReportObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        user_id:
+          type: integer
+          example: 1
+        category_id:
+          type: integer
+          example: 2
+        title:
+          type: string
+          example: Overflowing bin on Main St
+        description:
+          type: string
+          nullable: true
+          example: The bin near the park has been overflowing for 3 days.
+        latitude:
+          type: string
+          example: '4.061536'
+        longitude:
+          type: string
+          example: '9.778245'
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - resolved
+          example: pending
+        priority_score:
+          type: integer
+          example: 5
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        category:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/CategoryObject'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportImageObject'
+        status_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusHistoryObject'
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: 1|abcdefghijklmnopqrstuvwxyz
+        token_type:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/UserObject'
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            email:
+              - The email field is required.
+            password:
+              - The password must be at least 8 characters.
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+paths:
+  /register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account and returns an access token.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+                - password_confirmation
+              properties:
+                name:
+                  type: string
+                  example: Jane Doe
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: secret1234
+                password_confirmation:
+                  type: string
+                  format: password
+                  example: secret1234
+                phone_number:
+                  type: string
+                  example: '+1234567890'
+                role:
+                  type: string
+                  enum:
+                    - citizen
+                    - admin
+                  example: citizen
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: Login a user
+      description: Authenticates a user and returns an access token.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: jane@example.com
+                password:
+                  type: string
+                  format: password
+                  example: secret1234
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Invalid login credentials
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List all categories
+      description: Returns a list of all available report categories. No authentication required.
+      operationId: listCategories
+      responses:
+        '200':
+          description: A list of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryObject'
+
+  /user:
+    get:
+      tags:
+        - Authentication
+      summary: Get authenticated user
+      description: Returns the profile of the currently authenticated user.
+      operationId: getAuthUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Authenticated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserObject'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout the authenticated user
+      description: Revokes the current access token and logs the user out.
+      operationId: logoutUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /reports:
+    get:
+      tags:
+        - Reports
+      summary: List active reports
+      description: Returns all reports with a status of pending or in_progress.
+      operationId: listReports
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of active reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportObject'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+    post:
+      tags:
+        - Reports
+      summary: Submit a new report
+      description: >
+        Creates a new city report. Accepts multipart/form-data to allow
+        photo uploads alongside report details.
+      operationId: createReport
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - category_id
+                - latitude
+                - longitude
+              properties:
+                category_id:
+                  type: integer
+                  example: 2
+                title:
+                  type: string
+                  example: Overflowing bin on Main St
+                description:
+                  type: string
+                  example: The bin near the park has been overflowing for 3 days.
+                latitude:
+                  type: number
+                  format: float
+                  example: 4.061536
+                longitude:
+                  type: number
+                  format: float
+                  example: 9.778245
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: 'JPEG, PNG, or JPG images. Max 5 MB each.'
+      responses:
+        '201':
+          description: Report created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportObject'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  error:
+                    type: string
+
+  /my-reports:
+    get:
+      tags:
+        - Reports
+      summary: List reports by the authenticated user
+      description: Returns all reports submitted by the currently authenticated user, including category, images, and status history.
+      operationId: listMyReports
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: A list of the user's reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportObject'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /reports/{id}:
+    get:
+      tags:
+        - Reports
+      summary: Get a single report
+      description: Returns the full details of a specific report including category, images, and status history with the user who made each change.
+      operationId: getReport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the report
+          schema:
+            type: integer
+            example: 3
+      responses:
+        '200':
+          description: Report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportObject'
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /reports/{id}/upvote:
+    post:
+      tags:
+        - Reports
+      summary: Upvote a report
+      description: Adds an upvote to a report, increasing its priority score. Each user can only upvote a report once.
+      operationId: upvoteReport
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the report to upvote
+          schema:
+            type: integer
+            example: 3
+      responses:
+        '200':
+          description: Report upvoted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Report upvoted successfully
+                  priority_score:
+                    type: integer
+                    example: 6
+        '400':
+          description: Already upvoted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: You have already upvoted this report
+        '401':
+          description: Unauthenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'

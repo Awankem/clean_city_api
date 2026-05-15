@@ -1,0 +1,39 @@
+$kind: http-request
+name: Submit Report
+method: POST
+url: '{{base_url}}/reports'
+order: 3000
+headers:
+  - key: Accept
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{auth_token}}'
+body:
+  type: formdata
+  content:
+    - key: category_id
+      type: text
+      value: '1'
+    - key: description
+      type: text
+      value: 'There is a large pothole on the main road'
+    - key: latitude
+      type: text
+      value: '3.8480'
+    - key: longitude
+      type: text
+      value: '11.5021'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201 or 422", function () {
+          pm.expect(pm.response.code).to.be.oneOf([201, 422]);
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("report_id", pm.response.json().id);
+      }

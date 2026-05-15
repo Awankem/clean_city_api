@@ -22,3 +22,15 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Test Scripts
+create_test_image.php
+describe_reports.php
+patch_controller.php
+test_photo.jpg
+pending
+required

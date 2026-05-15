@@ -14,6 +14,7 @@ Route::get('/categories', [ReportController::class, 'categories']);
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
+    Route::post('/user/update-token', [AuthController::class, 'updateFcmToken']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/reports', [ReportController::class, 'index']);

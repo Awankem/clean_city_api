@@ -23,7 +23,17 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentReports'));
+        // Geo-located reports for the dashboard map widget
+        $mapReports = Report::whereIn('status', ['pending', 'in_progress'])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('id', 'latitude', 'longitude', 'priority_score', 'category_id')
+            ->with('category')
+            ->orderBy('priority_score', 'desc')
+            ->take(50)
+            ->get();
+
+        return view('admin.dashboard', compact('stats', 'recentReports', 'mapReports'));
     }
 
     public function reports()
@@ -63,6 +73,16 @@ class DashboardController extends Controller
             'note' => $request->note
         ]);
 
+        // Send Push Notification to Citizen
+        if ($report->user && $report->user->fcm_token) {
+            \App\Services\FcmService::send(
+                $report->user->fcm_token,
+                "Report Update: " . ucfirst($request->status),
+                "Your report '{$report->category->name}' has been updated to " . str_replace('_', ' ', $request->status) . ".",
+                ['report_id' => $report->id]
+            );
+        }
+
         return redirect()->back()->with('success', 'Report status updated successfully.');
     }
 
@@ -96,12 +116,18 @@ class DashboardController extends Controller
      */
     public function hotspots()
     {
-        $hotspots = Report::whereIn('status', ['pending', 'in_progress'])
-            ->select('id', 'latitude', 'longitude', 'priority_score', 'category_id')
-            ->with('category')
+        $hotspots = Report::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->select('id', 'latitude', 'longitude', 'priority_score', 'category_id', 'status', 'location_name', 'created_at')
+            ->with(['category', 'images' => function ($q) {
+                $q->select('id', 'report_id', 'image_path')->limit(1);
+            }])
+            ->orderBy('priority_score', 'desc')
             ->get();
 
-        return view('admin.hotspots', compact('hotspots'));
+        $categories = \App\Models\Category::withCount('reports')->get();
+
+        return view('admin.hotspots', compact('hotspots', 'categories'));
     }
 
     /**

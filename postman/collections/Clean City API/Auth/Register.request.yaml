@@ -1,0 +1,44 @@
+$kind: http-request
+name: Register
+method: POST
+url: '{{base_url}}/register'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "{{test_email}}",
+      "password": "{{test_password}}",
+      "password_confirmation": "{{test_password}}",
+      "phone_number": "1234567890",
+      "role": "citizen"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      var timestamp = Date.now();
+      var uniqueEmail = "testuser_" + timestamp + "@example.com";
+      pm.environment.set("test_email", uniqueEmail);
+      pm.environment.set("test_password", "password123");
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201", function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("Response has access_token", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("access_token");
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("auth_token", pm.response.json().access_token);
+      }

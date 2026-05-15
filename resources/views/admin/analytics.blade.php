@@ -76,44 +76,22 @@
         <!-- Reports by Category -->
         <div class="lg:col-span-1 bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/10 shadow-sm flex flex-col h-full">
             <h3 class="text-xl font-bold text-on-surface font-heading mb-6">Reports by Category</h3>
-            <div class="flex-1 flex flex-col justify-center space-y-6">
-                @foreach($analytics['reportsByCategory'] as $category)
-                    <div class="space-y-2">
-                        <div class="flex justify-between text-sm font-bold">
-                            <span class="text-on-surface-variant">{{ $category->label }}</span>
-                            <span class="text-on-surface">{{ $category->value }}</span>
-                        </div>
-                        <div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
-                            @php $percent = ($category->value / max(1, $analytics['reportsByCategory']->sum('value'))) * 100; @endphp
-                            <div class="h-full bg-primary rounded-full" style="width: {{ $percent }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
+            <div class="flex-1 relative min-h-[300px]">
+                <canvas id="categoryChart"></canvas>
             </div>
         </div>
 
         <!-- Monthly Trend Chart -->
         <div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/10 shadow-sm flex flex-col">
-            <h3 class="text-xl font-bold text-on-surface font-heading mb-6">Report Volume Trends (Submissions)</h3>
-            <div class="flex-1 flex items-end justify-between gap-2 min-h-[300px] pt-8">
-                @php $maxCount = max(1, $analytics['monthlyTrends']->max('count')); @endphp
-                @foreach($analytics['monthlyTrends'] as $trend)
-                    <div class="flex-1 flex flex-col items-center gap-4 group">
-                        <div class="relative w-full flex justify-center">
-                            <div class="w-12 bg-primary/10 group-hover:bg-primary/20 transition-colors rounded-t-xl" style="height: {{ ($trend->count / $maxCount) * 250 }}px"></div>
-                            <div class="absolute -top-8 opacity-0 group-hover:opacity-100 transition-opacity bg-on-surface text-surface text-[10px] font-black px-2 py-1 rounded shadow-lg">
-                                {{ $trend->count }}
-                            </div>
-                        </div>
-                        <span class="text-xs font-black text-on-surface-variant uppercase tracking-tighter">{{ $trend->month }}</span>
-                    </div>
-                @endforeach
+            <h3 class="text-xl font-bold text-on-surface font-heading mb-6">Report Volume Trends</h3>
+            <div class="flex-1 relative min-h-[300px]">
+                <canvas id="trendChart"></canvas>
             </div>
         </div>
     </div>
-
+    
     <!-- Secondary Insights -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         <div class="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/10 flex items-center justify-between">
             <div class="space-y-2">
                 <h4 class="text-lg font-bold text-on-surface font-heading">Efficiency Score</h4>
@@ -138,3 +116,91 @@
     </div>
 </div>
 @endsection
+
+@section('scripts_head')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@endsection
+
+@section('scripts')
+<script>
+    // Category Doughnut Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {!! json_encode($analytics['reportsByCategory']->pluck('label')) !!},
+            datasets: [{
+                data: {!! json_encode($analytics['reportsByCategory']->pluck('value')) !!},
+                backgroundColor: [
+                    '#00482f', // primary
+                    '#52634f', // secondary
+                    '#38656a', // tertiary
+                    '#006d3a',
+                    '#0052d1'
+                ],
+                borderWidth: 0,
+                hoverOffset: 20
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { family: 'Inter', weight: 'bold' }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Trend Line Chart
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    const gradient = trendCtx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(0, 72, 47, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 72, 47, 0)');
+
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($analytics['monthlyTrends']->pluck('month')) !!},
+            datasets: [{
+                label: 'Submissions',
+                data: {!! json_encode($analytics['monthlyTrends']->pluck('count')) !!},
+                borderColor: '#00482f',
+                borderWidth: 4,
+                fill: true,
+                backgroundColor: gradient,
+                tension: 0.4,
+                pointBackgroundColor: '#00482f',
+                pointRadius: 6,
+                pointHoverRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { weight: 'bold' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+</script>
+@endsection
+

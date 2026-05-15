@@ -29,10 +29,11 @@ class ReportController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|exists:categories,id',
+            'title' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'photos' => 'required|array|min:1',
+            'photos' => 'nullable|array|min:1',
             'photos.*' => 'image|mimes:jpeg,png,jpg|max:5120', // 5MB limit
         ]);
 
@@ -42,33 +43,52 @@ class ReportController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
+                // 0. Geofencing check (Example for a specific city boundary)
+                // Roughly checking if within a box - adjust to your city's bounds
+                $lat = (float) $request->latitude;
+                $lng = (float) $request->longitude;
+                // Example bounds (replace with your city): 
+                // Latitude: 5.4 - 5.8, Longitude: -0.3 - -0.1
+                if ($lat < 5.4 || $lat > 5.8 || $lng < -0.3 || $lng > -0.1) {
+                    // return response()->json(['message' => 'Reports must be within the city boundary.'], 400);
+                    // For now we just log it, but you can uncomment the above to enforce it strictly.
+                    \Log::info("Report outside city bounds: Lat {$lat}, Lng {$lng}");
+                }
+
                 // 1. Create the Report record
                 $report = Report::create([
-                    'user_id' => $request->user()->id,
+                    'user_id'     => $request->user()->id,
                     'category_id' => $request->category_id,
+                    'title'       => $request->title ?? ('Waste Report #' . time()),
                     'description' => $request->description,
-                    'latitude' => $request->latitude,
-                    'longitude' => $request->longitude,
-                    // Use ST_SRID to ensure coordinates are mapped correctly for spatial queries
-                    'location' => DB::raw("ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)"),
-
-                    'status' => 'pending',
+                    'latitude'    => $request->latitude,
+                    'longitude'   => $request->longitude,
+                    'location_name' => $request->location_name ?? null, // Human-readable address from mobile geocoding
+                    'location'    => DB::raw("ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)"),
+                    'status'      => 'pending',
                 ]);
 
-                // 2. Handle Photo Uploads
-                foreach ($request->file('photos') as $photo) {
-                    $path = $photo->store('reports', 'public');
-                    ReportImage::create([
-                        'report_id' => $report->id,
-                        'image_path' => $path,
-                    ]);
+                // 2. Handle Photo Uploads with Optimization
+                if ($request->hasFile('photos')) {
+                    foreach ($request->file('photos') as $photo) {
+                        $filename = 'report_' . time() . '_' . uniqid() . '.jpg';
+                        $path = 'reports/' . $filename;
+                        
+                        // Optimized saving using GD
+                        $this->saveOptimizedImage($photo->getRealPath(), storage_path('app/public/' . $path));
+
+                        ReportImage::create([
+                            'report_id' => $report->id,
+                            'image_path' => $path,
+                        ]);
+                    }
                 }
 
                 // 3. Create initial status history
                 StatusHistory::create([
                     'report_id' => $report->id,
                     'changed_by' => $request->user()->id,
-                    'old_status' => null,
+                    'old_status' => 'pending',
                     'new_status' => 'pending',
                     'note' => 'Report submitted successfully.',
                 ]);
@@ -77,6 +97,9 @@ class ReportController extends Controller
                 $this->updatePriorityScore($report);
 
                 $report->refresh();
+
+                // 5. Dispatch Real-time Event
+                event(new \App\Events\ReportSubmitted($report));
 
                 return response()->json($report->load('images', 'category', 'statusHistory'), 201);
 
@@ -93,7 +116,8 @@ class ReportController extends Controller
     {
         $reports = Report::with(['category', 'images'])
             ->whereIn('status', ['pending', 'in_progress'])
-            ->get();
+            ->get()
+            ->map(fn($r) => $this->appendImageUrls($r));
 
         return response()->json($reports);
     }
@@ -153,7 +177,7 @@ class ReportController extends Controller
     public function show($id)
     {
         $report = Report::with(['category', 'images', 'statusHistory.changedBy'])->findOrFail($id);
-        return response()->json($report);
+        return response()->json($this->appendImageUrls($report));
     }
 
     /**
@@ -164,8 +188,73 @@ class ReportController extends Controller
         $reports = Report::with(['category', 'images', 'statusHistory'])
             ->where('user_id', $request->user()->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(fn($r) => $this->appendImageUrls($r));
 
         return response()->json($reports);
+    }
+
+    /**
+     * Append full storage URLs to image objects so Flutter can render them directly.
+     */
+    protected function appendImageUrls(Report $report): Report
+    {
+        $report->images->transform(function ($image) {
+            $image->image_url = url('storage/' . $image->image_path);
+            return $image;
+        });
+        return $report;
+    }
+
+    /**
+     * Optimized image saving using pure PHP GD library.
+     */
+    protected function saveOptimizedImage($sourcePath, $destinationPath)
+    {
+        list($width, $height, $type) = getimagesize($sourcePath);
+        
+        $maxSize = 1200;
+        $newWidth = $width;
+        $newHeight = $height;
+
+        if ($width > $maxSize || $height > $maxSize) {
+            if ($width > $height) {
+                $newWidth = $maxSize;
+                $newHeight = floor($height * ($maxSize / $width));
+            } else {
+                $newHeight = $maxSize;
+                $newWidth = floor($width * ($maxSize / $height));
+            }
+        }
+
+        $image = null;
+        switch ($type) {
+            case IMAGETYPE_JPEG: $image = imagecreatefromjpeg($sourcePath); break;
+            case IMAGETYPE_PNG: $image = imagecreatefrompng($sourcePath); break;
+            case IMAGETYPE_GIF: $image = imagecreatefromgif($sourcePath); break;
+        }
+
+        if ($image) {
+            $newImage = imagecreatetruecolor($newWidth, $newHeight);
+            
+            // Handle transparency for PNGs
+            if ($type == IMAGETYPE_PNG) {
+                imagealphablending($newImage, false);
+                imagesavealpha($newImage, true);
+            }
+
+            imagecopyresampled($newImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            
+            // Ensure directory exists
+            if (!file_exists(dirname($destinationPath))) {
+                mkdir(dirname($destinationPath), 0755, true);
+            }
+
+            // Save as high-quality JPG
+            imagejpeg($newImage, $destinationPath, 80);
+            
+            imagedestroy($image);
+            imagedestroy($newImage);
+        }
     }
 }

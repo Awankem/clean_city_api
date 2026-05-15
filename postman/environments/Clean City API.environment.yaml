@@ -1,0 +1,17 @@
+name: Clean City API
+values:
+  - key: base_url
+    enabled: true
+    value: 'http://localhost:8000/api'
+  - key: auth_token
+    enabled: true
+    value: ''
+  - key: report_id
+    enabled: true
+    value: ''
+  - key: test_email
+    enabled: true
+    value: ''
+  - key: test_password
+    enabled: true
+    value: ''

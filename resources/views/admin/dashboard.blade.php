@@ -121,24 +121,44 @@
             </div>
         </div>
 
-        <!-- Hotspot Map Widget -->
+        <!-- Hotspot Map Widget (Dynamic) -->
         <div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden flex flex-col h-full border border-outline-variant/10">
-            <div class="p-6 border-b border-outline-variant/10">
-                <h3 class="text-xl font-bold text-on-surface font-heading">Hotspot Map</h3>
-                <p class="text-xs text-on-surface-variant mt-1">Live coverage of urgent alerts in the city</p>
+            <div class="p-6 border-b border-outline-variant/10 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                        <span class="text-[10px] font-black text-primary uppercase tracking-widest">Live</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-on-surface font-heading">Hotspot Map</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">Active alerts across the district</p>
+                </div>
+                <span class="text-xs font-bold bg-tertiary/10 text-tertiary px-3 py-1.5 rounded-full">
+                    {{ $mapReports->count() }} Active
+                </span>
             </div>
-            <div class="flex-1 relative min-h-[300px] bg-surface-container-low flex items-center justify-center">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_TttPuXg_oGhQEymjMPdSQI-YqtfkR84TFTIY9hJhSDpzEgtLUmQE_Gs21WEWi4KywW3t3H_Vorw-aOkqZJRszEjAb_T1flVDIHSuEqt5KEEFDMoqDE8oywqdwphOXspk-HKA0snvlQLp_fCVX3LABxd1bjYIWsB7Z7QfPvo5-YXouqtJR3k9bS-0OQ8mB8oLMW6gmvqesF9x-MUcNSnbNjTSukirINTbHrNF1K-abwIpV9lUUln6uaCIdB6u4UvIKwiYV3AsAvD9" alt="Map View" class="w-full h-full object-cover">
-                <div class="absolute top-1/4 left-1/3 w-8 h-8">
-                    <div class="absolute inset-0 bg-tertiary rounded-full animate-ping opacity-75"></div>
-                    <div class="absolute inset-2 bg-tertiary rounded-full border-2 border-white shadow-lg"></div>
+            <div class="flex-1 relative min-h-[320px]">
+                <div id="dashboard-map" class="absolute inset-0"></div>
+                <!-- Legend Overlay -->
+                <div class="absolute bottom-3 left-3 bg-surface-container-lowest/90 backdrop-blur-sm px-3 py-2 rounded-xl border border-outline-variant/10 shadow-lg flex flex-col gap-1.5 pointer-events-none">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]"></span>
+                        <span class="text-[9px] font-black text-on-surface-variant uppercase tracking-wider">Critical (&gt;7)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]"></span>
+                        <span class="text-[9px] font-black text-on-surface-variant uppercase tracking-wider">Moderate (4-7)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span>
+                        <span class="text-[9px] font-black text-on-surface-variant uppercase tracking-wider">Low (&lt;4)</span>
+                    </div>
                 </div>
             </div>
             <div class="p-4 bg-surface-container-low">
-                <button class="w-full bg-primary text-on-primary py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+                <a href="{{ route('admin.hotspots') }}" class="w-full bg-primary text-on-primary py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
                     <span class="material-symbols-outlined text-sm" data-icon="fullscreen">fullscreen</span>
-                    Enter Map View
-                </button>
+                    Enter Full Map View
+                </a>
             </div>
         </div>
     </section>
@@ -186,4 +206,149 @@
         </div>
     </section>
 </div>
+@endsection
+
+@section('styles')
+<style>
+    #dashboard-map { width: 100%; height: 100%; }
+
+    .dash-marker {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .dash-marker:hover { transform: scale(1.2); }
+
+    /* Custom popup */
+    .mapboxgl-popup-content {
+        background: rgba(23, 28, 34, 0.95) !important;
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px !important;
+        padding: 16px !important;
+        color: white !important;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.4) !important;
+        min-width: 180px;
+    }
+    .mapboxgl-popup-tip { display: none; }
+</style>
+@endsection
+
+@section('scripts')
+<script>
+(function () {
+    const TOKEN = "{{ config('services.mapbox.access_token') }}";
+    if (!TOKEN || !window.mapboxgl) return;
+
+    mapboxgl.accessToken = TOKEN;
+
+    @php
+        $mapData = $mapReports->map(function($r) {
+            return [
+                'id'       => $r->id,
+                'lat'      => (float) $r->latitude,
+                'lng'      => (float) $r->longitude,
+                'priority' => (float) $r->priority_score,
+                'category' => $r->category->name ?? 'Uncategorized',
+            ];
+        })->values();
+    @endphp
+    const reports = @json($mapData);
+
+    const map = new mapboxgl.Map({
+        container: 'dashboard-map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [-0.1870, 5.6037],
+        zoom: 11,
+        interactive: true,
+        attributionControl: false,
+    });
+
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }));
+
+    // ── Color helper ──────────────────────────────────────────────────────────
+    function markerColor(priority) {
+        if (priority > 7) return '#ef4444';   // red
+        if (priority > 4) return '#fbbf24';   // amber
+        return '#10b981';                      // emerald
+    }
+
+    // ── Place markers ─────────────────────────────────────────────────────────
+    map.on('load', () => {
+        map.resize();
+
+        if (reports.length === 0) return;
+
+        const bounds = new mapboxgl.LngLatBounds();
+
+        reports.forEach(r => {
+            bounds.extend([r.lng, r.lat]);
+
+            // Outer pulse ring
+            const ring = document.createElement('div');
+            ring.style.cssText = `
+                position:absolute;
+                width:28px; height:28px;
+                border-radius:50%;
+                background:${markerColor(r.priority)}26;
+                animation: dashPing 1.8s ease-out infinite;
+                top:-14px; left:-14px;
+            `;
+
+            // Inner dot
+            const dot = document.createElement('div');
+            dot.style.cssText = `
+                width:14px; height:14px;
+                border-radius:50%;
+                background:${markerColor(r.priority)};
+                border:2px solid white;
+                box-shadow:0 0 0 2px ${markerColor(r.priority)}66, 0 2px 8px rgba(0,0,0,0.5);
+                position:relative; z-index:1;
+            `;
+
+            const el = document.createElement('div');
+            el.className = 'dash-marker';
+            el.style.cssText = 'width:14px; height:14px; position:relative;';
+            el.appendChild(ring);
+            el.appendChild(dot);
+
+            const popup = new mapboxgl.Popup({ offset: 18, closeButton: false })
+                .setHTML(`
+                    <div style="font-family:Inter,sans-serif;">
+                        <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;opacity:.5;margin-bottom:4px;">${r.category}</p>
+                        <p style="font-size:14px;font-weight:900;margin-bottom:6px;">Report #CC-${ String(r.id).padStart(4,'0') }</p>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:${markerColor(r.priority)};flex-shrink:0;"></span>
+                            <span style="font-size:11px;font-weight:700;color:${markerColor(r.priority)}">
+                                Priority ${r.priority.toFixed(1)}/10
+                            </span>
+                        </div>
+                    </div>
+                `);
+
+            new mapboxgl.Marker(el)
+                .setLngLat([r.lng, r.lat])
+                .setPopup(popup)
+                .addTo(map);
+        });
+
+        // Fit map to all markers with padding
+        if (reports.length > 1) {
+            map.fitBounds(bounds, { padding: 48, maxZoom: 14, duration: 800 });
+        } else if (reports.length === 1) {
+            map.flyTo({ center: [reports[0].lng, reports[0].lat], zoom: 14, duration: 800 });
+        }
+    });
+
+    // Resize when the layout settles
+    setTimeout(() => map.resize(), 300);
+})();
+</script>
+
+<style>
+@keyframes dashPing {
+    0%   { transform: scale(1);   opacity: .7; }
+    70%  { transform: scale(2.4); opacity: 0; }
+    100% { transform: scale(1);   opacity: 0; }
+}
+</style>
 @endsection
