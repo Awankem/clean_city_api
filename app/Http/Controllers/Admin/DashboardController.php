@@ -91,16 +91,19 @@ class DashboardController extends Controller
      */
     public function analytics()
     {
+        $isPgSql = \DB::getDriverName() === 'pgsql';
         // Data aggregation for charts
         $analytics = [
             'reportsByCategory' => Report::join('categories', 'reports.category_id', '=', 'categories.id')
                 ->select(\DB::raw('categories.name as label, count(*) as value'))
                 ->groupBy('categories.name')
                 ->get(),
-            'monthlyTrends' => Report::select(\DB::raw('DATE_FORMAT(created_at, "%b") as month, count(*) as count'))
+            'monthlyTrends' => Report::select($isPgSql 
+                ? \DB::raw('TO_CHAR(created_at, \'Mon\') as month, count(*) as count')
+                : \DB::raw('DATE_FORMAT(created_at, "%b") as month, count(*) as count'))
                 ->where('created_at', '>=', now()->subMonths(6))
                 ->groupBy('month')
-                ->orderBy('created_at')
+                ->orderBy(\DB::raw('MIN(created_at)'))
                 ->get(),
             'resolutionRate' => Report::count() > 0 
                 ? (Report::where('status', 'resolved')->count() / Report::count()) * 100 

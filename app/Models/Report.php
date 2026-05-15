@@ -41,9 +41,18 @@ class Report extends Model
     public function calculatePriorityScore()
     {
         $radius = 500; // 500 meters as per documentation
-        
+        $isPgSql = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql';
+        $distanceFunc = $isPgSql ? 'ST_DistanceSphere' : 'ST_Distance_Sphere';
+        $pointSql = $isPgSql 
+            ? "ST_GeomFromText('POINT(' || ? || ' ' || ? || ')', 4326)" 
+            : "ST_GeomFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326)";
+
         $nearbyCount = self::where('id', '!=', $this->id)
-            ->whereRaw("ST_Distance_Sphere(location, ST_GeomFromText('POINT({$this->longitude} {$this->latitude})', 4326)) <= ?", [$radius])
+            ->whereRaw("$distanceFunc(location, $pointSql) <= ?", [
+                $this->longitude,
+                $this->latitude,
+                $radius
+            ])
             ->count();
 
         $upvotes = $this->votes()->count();
