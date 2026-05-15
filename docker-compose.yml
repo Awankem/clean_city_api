@@ -7,6 +7,8 @@ services:
     container_name: cleancity-app
     restart: unless-stopped
     working_dir: /var/www
+    ports:
+      - "8000:80"
     volumes:
       - .:/var/www
       - ./storage:/var/www/storage
@@ -18,31 +20,15 @@ services:
     env_file:
       - .env
 
-  web:
-    image: nginx:alpine
-    container_name: cleancity-web
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-8000}:80"
-    volumes:
-      - .:/var/www
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-    networks:
-      - cleancity-net
-    depends_on:
-      - app
-
   db:
     image: mysql:8.0
     container_name: cleancity-db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_DATABASE: ${DB_DATABASE:-clean_city}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - cleancity-db-data:/var/lib/mysql
     networks:

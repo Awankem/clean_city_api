@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: cleancity-api
+    env: docker
+    plan: free
+    region: oregon
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: DB_CONNECTION
+        value: pgsql
+      - fromDatabase:
+          name: cleancity-db
+          property: host
+        key: DB_HOST
+      - fromDatabase:
+          name: cleancity-db
+          property: port
+        key: DB_PORT
+      - fromDatabase:
+          name: cleancity-db
+          property: database
+        key: DB_DATABASE
+      - fromDatabase:
+          name: cleancity-db
+          property: user
+        key: DB_USERNAME
+      - fromDatabase:
+          name: cleancity-db
+          property: password
+        key: DB_PASSWORD
+      - key: APP_KEY
+        generateValue: true
+
+databases:
+  - name: cleancity-db
+    plan: free
+    region: oregon

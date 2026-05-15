@@ -11,6 +11,7 @@ use App\Models\StatusHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ReportController extends Controller
 {
@@ -68,14 +69,29 @@ class ReportController extends Controller
                     'status'      => 'pending',
                 ]);
 
-                // 2. Handle Photo Uploads with Optimization
+                // 2. Handle Photo Uploads (Cloudinary or Local)
                 if ($request->hasFile('photos')) {
                     foreach ($request->file('photos') as $photo) {
-                        $filename = 'report_' . time() . '_' . uniqid() . '.jpg';
-                        $path = 'reports/' . $filename;
-                        
-                        // Optimized saving using GD
-                        $this->saveOptimizedImage($photo->getRealPath(), storage_path('app/public/' . $path));
+                        if (config('cloudinary.cloud_url')) {
+                            // Upload to Cloudinary
+                            $uploadedFileUrl = Cloudinary::upload($photo->getRealPath(), [
+                                'folder' => 'clean_city/reports',
+                                'transformation' => [
+                                    'width' => 1200,
+                                    'height' => 1200,
+                                    'crop' => 'limit',
+                                    'quality' => 'auto',
+                                    'fetch_format' => 'auto'
+                                ]
+                            ])->getSecurePath();
+                            
+                            $path = $uploadedFileUrl;
+                        } else {
+                            // Fallback to Local Storage
+                            $filename = 'report_' . time() . '_' . uniqid() . '.jpg';
+                            $path = 'reports/' . $filename;
+                            $this->saveOptimizedImage($photo->getRealPath(), storage_path('app/public/' . $path));
+                        }
 
                         ReportImage::create([
                             'report_id' => $report->id,
@@ -200,7 +216,11 @@ class ReportController extends Controller
     protected function appendImageUrls(Report $report): Report
     {
         $report->images->transform(function ($image) {
-            $image->image_url = url('storage/' . $image->image_path);
+            if (filter_var($image->image_path, FILTER_VALIDATE_URL)) {
+                $image->image_url = $image->image_path;
+            } else {
+                $image->image_url = url('storage/' . $image->image_path);
+            }
             return $image;
         });
         return $report;

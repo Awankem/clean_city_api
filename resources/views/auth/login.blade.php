@@ -79,6 +79,11 @@
                 <button type="submit" class="w-full bg-primary text-on-primary py-4 rounded-2xl text-sm font-black tracking-tight shadow-md shadow-primary/10 hover:opacity-90 active:scale-[0.98] transition-all">
                     SIGN INTO DASHBOARD
                 </button>
+
+                <div class="mt-8 pt-6 border-t border-outline-variant/5 flex items-center justify-center gap-2">
+                    <span class="text-xs text-on-surface-variant font-medium">New administrator?</span>
+                    <a href="{{ route('register') }}" class="text-xs font-black text-primary hover:underline">Create Account</a>
+                </div>
             </form>
         </div>
 

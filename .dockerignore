@@ -6,7 +6,6 @@ vendor
 .phpunit.result.cache
 docker-compose.yml
 Dockerfile
-.docker
 storage/*.key
 public/storage
 public/build
