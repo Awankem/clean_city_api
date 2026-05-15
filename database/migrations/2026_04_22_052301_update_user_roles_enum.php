@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['citizen', 'admin', 'staff', 'collector'])->default('citizen')->change();
-        });
+        // Handled in the original create_users_table migration for PostgreSQL compatibility
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['citizen', 'admin'])->default('citizen')->change();
-        });
+        // Handled in the original create_users_table migration
     }
 };
