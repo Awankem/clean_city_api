@@ -58,8 +58,8 @@ class ReportController extends Controller
 
                 $isPgSql = DB::getDriverName() === 'pgsql';
                 $pointSql = $isPgSql 
-                    ? "ST_GeomFromText('POINT(' || ? || ' ' || ? || ')', 4326)" 
-                    : "ST_GeomFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326)";
+                    ? "ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)" 
+                    : "ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)";
 
                 $report = Report::create([
                     'user_id'     => $request->user()->id,
@@ -187,7 +187,7 @@ class ReportController extends Controller
         // 2. Count nearby reports within 500 meters
         $isPgSql = DB::getDriverName() === 'pgsql';
         $distanceFunc = $isPgSql ? 'ST_DistanceSphere' : 'ST_Distance_Sphere';
-        $pointFunc = $isPgSql ? "ST_GeomFromText('POINT(' || ? || ' ' || ? || ')', 4326)" : "ST_GeomFromText(CONCAT('POINT(', ?, ' ', ?, ')'), 4326)";
+        $pointFunc = $isPgSql ? "ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)" : "ST_GeomFromText('POINT({$request->longitude} {$request->latitude})', 4326)";
 
         $nearbyCount = DB::table('reports')
             ->where('id', '!=', $report->id)
@@ -294,4 +294,5 @@ class ReportController extends Controller
         }
     }
 }
+
 
