@@ -23,3 +23,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/{id}', [ReportController::class, 'show']);
     Route::post('/reports/{id}/upvote', [ReportController::class, 'upvote']);
 });
+
+Route::get('/seed-categories', function () {
+    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'CategorySeeder', '--force' => true]);
+    return 'Categories successfully seeded!';
+});
+
