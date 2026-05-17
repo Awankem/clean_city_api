@@ -73,12 +73,7 @@ class ReportController extends Controller
                     'status'      => 'pending',
                 ]);
 
-                // Bind coordinates to the raw SQL
-                if ($isPgSql) {
-                    $report->where('id', $report->id)->update([
-                        'location' => DB::raw("ST_GeomFromText('POINT(' || {$request->longitude} || ' ' || {$request->latitude} || ')', 4326)")
-                    ]);
-                }
+
 
 
                 // 2. Handle Photo Uploads (Cloudinary or Local)
