@@ -29,3 +29,12 @@ Route::get('/seed-categories', function () {
     return 'Categories successfully seeded!';
 });
 
+
+Route::get('/debug-logs', function () {
+    $logPath = storage_path('logs/laravel.log');
+    if (!file_exists($logPath)) {
+        return 'Log file does not exist.';
+    }
+    $logs = file_get_contents($logPath);
+    return nl2br(e(substr($logs, -4000)));
+});
