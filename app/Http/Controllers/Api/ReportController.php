@@ -128,6 +128,7 @@ class ReportController extends Controller
 
             });
         } catch (\Exception $e) {
+            \Log::error("Report submission failed: " . $e->getMessage() . "\n" . $e->getTraceAsString());
             return response()->json(['message' => 'Failed to submit report', 'error' => $e->getMessage()], 500);
         }
     }
