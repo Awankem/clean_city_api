@@ -70,9 +70,9 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         @foreach($report->images as $image)
                             <div class="group relative aspect-video rounded-xl overflow-hidden border border-outline-variant/10 bg-surface-container">
-                                <img src="/storage/{{ $image->image_path }}" alt="Report Image" class="w-full h-full object-cover transition-transform group-hover:scale-105">
+                                <img src="{{ $image->image_url }}" alt="Report Image" class="w-full h-full object-cover transition-transform group-hover:scale-105">
                                 <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <a href="/storage/{{ $image->image_path }}" target="_blank" class="p-2 bg-white rounded-full text-on-surface">
+                                    <a href="{{ $image->image_url }}" target="_blank" class="p-2 bg-white rounded-full text-on-surface">
                                         <span class="material-symbols-outlined" data-icon="zoom_in">zoom_in</span>
                                     </a>
                                 </div>

@@ -273,7 +273,7 @@
                 'category' => $h->category->name ?? 'Uncategorized',
                 'status' => $h->status,
                 'location_name' => $h->location_name,
-                'image' => $h->images->first() ? asset('storage/' . $h->images->first()->image_path) : null,
+                'image' => $h->images->first() ? $h->images->first()->image_url : null,
                 'created_at' => $h->created_at->format('M d, Y')
             ];
         })->values();

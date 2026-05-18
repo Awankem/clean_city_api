@@ -36,5 +36,5 @@ Route::get('/debug-logs', function () {
         return 'Log file does not exist.';
     }
     $logs = file_get_contents($logPath);
-    return nl2br(e(substr($logs, -30000)));
+    return nl2br(e(substr($logs, -4000)));
 });
