@@ -79,22 +79,28 @@ class ReportController extends Controller
                 // 2. Handle Photo Uploads (Cloudinary or Local)
                 if ($request->hasFile('photos')) {
                     foreach ($request->file('photos') as $photo) {
-                        if (config('cloudinary.cloud_url')) {
+                        $path = null;
+
+                        if (env('CLOUDINARY_URL')) {
                             // Upload to Cloudinary
-                            $uploadedFileUrl = Cloudinary::upload($photo->getRealPath(), [
-                                'folder' => 'clean_city/reports',
-                                'transformation' => [
-                                    'width' => 1200,
-                                    'height' => 1200,
-                                    'crop' => 'limit',
-                                    'quality' => 'auto',
-                                    'fetch_format' => 'auto'
-                                ]
-                            ])->getSecurePath();
-                            
-                            $path = $uploadedFileUrl;
-                        } else {
-                            // Fallback to Local Storage
+                            try {
+                                $path = Cloudinary::upload($photo->getRealPath(), [
+                                    'folder' => 'clean_city/reports',
+                                    'transformation' => [
+                                        'width' => 1200,
+                                        'height' => 1200,
+                                        'crop' => 'limit',
+                                        'quality' => 'auto',
+                                        'fetch_format' => 'auto'
+                                    ]
+                                ])->getSecurePath();
+                            } catch (\Exception $cloudinaryEx) {
+                                \Log::warning("Cloudinary upload failed, falling back to local: " . $cloudinaryEx->getMessage());
+                            }
+                        }
+
+                        // Fallback to Local Storage if Cloudinary is not set or failed
+                        if (!$path) {
                             $filename = 'report_' . time() . '_' . uniqid() . '.jpg';
                             $path = 'reports/' . $filename;
                             $this->saveOptimizedImage($photo->getRealPath(), storage_path('app/public/' . $path));
