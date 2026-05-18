@@ -36,10 +36,5 @@ Route::get('/debug-logs', function () {
         return 'Log file does not exist.';
     }
     $logs = file_get_contents($logPath);
-    return nl2br(e(substr($logs, -10000))); // Increased to 10k characters
-});
-
-Route::get('/debug-reports', function () {
-    $reports = \App\Models\Report::with(['category', 'images'])->latest()->take(5)->get();
-    return response()->json($reports);
+    return nl2br(e(substr($logs, -30000)));
 });
