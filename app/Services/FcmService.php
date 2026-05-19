@@ -66,14 +66,26 @@ class FcmService
     private static function getAccessToken()
     {
         return Cache::remember('fcm_access_token', 3500, function () {
-            $path = config('services.fcm.service_account');
+            $configJson = env('FCM_SERVICE_ACCOUNT_JSON');
             
-            if (!file_exists($path)) {
-                Log::error("FCM: Service account file not found at " . $path);
-                return null;
-            }
+            if ($configJson) {
+                // Support both raw JSON and base64 encoded JSON
+                $decoded = base64_decode($configJson, true);
+                if ($decoded && json_decode($decoded) !== null) {
+                    $config = json_decode($decoded, true);
+                } else {
+                    $config = json_decode($configJson, true);
+                }
+            } else {
+                $path = config('services.fcm.service_account');
+                
+                if (!file_exists($path)) {
+                    Log::error("FCM: Service account credentials not found in env or at " . $path);
+                    return null;
+                }
 
-            $config = json_decode(file_get_contents($path), true);
+                $config = json_decode(file_get_contents($path), true);
+            }
             $now = time();
             
             // 1. JWT Header
