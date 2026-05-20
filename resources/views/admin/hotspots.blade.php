@@ -1,6 +1,7 @@
 @extends('layouts.admin')
 
 @section('title', 'Hotspot Analysis')
+@section('breadcrumb', 'Geospatial')
 
 @section('scripts_head')
     <!-- Socket.io / Echo Support -->

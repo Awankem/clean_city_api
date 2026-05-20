@@ -1,142 +1,120 @@
 @extends('layouts.admin')
 
-@section('title', 'Report Detail - #CC-' . str_pad($report->id, 4, '0', STR_PAD_LEFT))
+@section('title', 'Report #CC-' . str_pad($report->id, 4, '0', STR_PAD_LEFT))
+@section('breadcrumb', 'Report detail')
 
 @section('content')
-<div class="space-y-8">
-    <div class="flex items-center gap-4">
-        <a href="{{ route('admin.reports.index') }}" class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface-variant">
-            <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<div class="space-y-6">
+    <div class="flex items-start gap-4">
+        <a href="{{ route('admin.reports.index') }}" class="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container-lowest border border-outline-variant/15 hover:bg-surface-container transition-colors shrink-0" aria-label="Back to reports">
+            <span class="material-symbols-outlined text-on-surface-variant">arrow_back</span>
         </a>
-        <div>
+        <div class="min-w-0 flex-1">
             <h2 class="text-2xl font-black text-primary font-heading tracking-tight">Report #CC-{{ str_pad($report->id, 4, '0', STR_PAD_LEFT) }}</h2>
-            <p class="text-sm text-on-surface-variant">Submitted by <strong>{{ $report->user->name ?? 'Anonymous' }}</strong> on {{ $report->created_at->format('M d, Y \a\t H:i') }}</p>
+            <p class="text-sm text-on-surface-variant mt-1">
+                Submitted by <strong class="text-on-surface">{{ $report->user->name ?? 'Anonymous' }}</strong>
+                · {{ $report->created_at->format('M d, Y \a\t H:i') }}
+            </p>
         </div>
+        <x-admin.status-badge :status="$report->status" class="shrink-0" />
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Column: Details & Images -->
-        <div class="lg:col-span-2 space-y-8">
-            <!-- Report Core Info -->
-            <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/10 shadow-sm">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <x-admin.card>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 -mt-2">
                     <div>
-                        <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Issue Category</span>
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-primary" data-icon="category">category</span>
-                            <span class="text-lg font-bold text-on-surface">{{ $report->category->name ?? 'Uncategorized' }}</span>
+                        <span class="admin-label">Issue category</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="material-symbols-outlined text-primary">category</span>
+                            <span class="text-lg font-bold">{{ $report->category->name ?? 'Uncategorized' }}</span>
                         </div>
                     </div>
                     <div>
-                        <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Priority Score</span>
-                        <div class="flex items-center gap-3">
-                            <div class="w-24 bg-surface-container-highest h-2 rounded-full overflow-hidden">
-                                <div class="h-full bg-{{ $report->priority_score > 7 ? 'tertiary' : ($report->priority_score > 4 ? 'secondary' : 'primary') }}" style="width: {{ $report->priority_score * 10 }}%"></div>
-                            </div>
-                            <span class="text-xl font-black text-on-surface">{{ number_format($report->priority_score, 1) }}</span>
-                        </div>
+                        <span class="admin-label">Priority score</span>
+                        <div class="mt-2"><x-admin.priority-bar :score="$report->priority_score" width="w-28" /></div>
                     </div>
                 </div>
 
-                <div class="mb-8">
-                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Description</span>
-                    <p class="text-on-surface leading-relaxed">{{ $report->description ?? 'No description provided.' }}</p>
+                <div class="mt-8 pt-8 border-t border-outline-variant/10">
+                    <span class="admin-label">Description</span>
+                    <p class="mt-2 text-on-surface leading-relaxed">{{ $report->description ?? 'No description provided.' }}</p>
                 </div>
 
-                <div>
-                    <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Location Details</span>
-                    <div class="flex items-start gap-2 text-on-surface-variant">
-                        <span class="material-symbols-outlined text-sm mt-0.5" data-icon="location_on">location_on</span>
-                        <p class="text-sm font-medium">Latitude: {{ $report->latitude }}, Longitude: {{ $report->longitude }}</p>
+                <div class="mt-8 pt-8 border-t border-outline-variant/10">
+                    <span class="admin-label">Location</span>
+                    <div class="flex items-start gap-2 mt-2 text-sm text-on-surface-variant">
+                        <span class="material-symbols-outlined text-base shrink-0">location_on</span>
+                        <p>{{ $report->latitude }}, {{ $report->longitude }}@if($report->address) — {{ $report->address }}@endif</p>
                     </div>
-                    @if($report->address)
-                        <p class="text-sm mt-1 ml-6">{{ $report->address }}</p>
-                    @endif
-                    
-                    <div class="mt-6 rounded-2xl overflow-hidden border border-outline-variant/10 aspect-video relative">
-                        <img src="https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+ff0000({{ $report->longitude }},{{ $report->latitude }})/{{ $report->longitude }},{{ $report->latitude }},15,0/600x300?access_token={{ config('services.mapbox.access_token') }}" alt="Report Location" class="w-full h-full object-cover">
+                    <div class="mt-4 rounded-2xl overflow-hidden border border-outline-variant/15 aspect-video">
+                        <img src="https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+ff0000({{ $report->longitude }},{{ $report->latitude }})/{{ $report->longitude }},{{ $report->latitude }},15,0/600x300?access_token={{ config('services.mapbox.access_token') }}"
+                             alt="Report location" class="w-full h-full object-cover">
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
 
-            <!-- Image Gallery -->
-            <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/10 shadow-sm">
-                <h3 class="text-lg font-bold text-on-surface font-heading mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary" data-icon="photo_library">photo_library</span>
-                    Evidence Records
-                </h3>
-                
+            <x-admin.card title="Evidence photos">
                 @if($report->images->count() > 0)
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 -mt-2">
                         @foreach($report->images as $image)
-                            <div class="group relative aspect-video rounded-xl overflow-hidden border border-outline-variant/10 bg-surface-container">
-                                <img src="{{ $image->image_url }}" alt="Report Image" class="w-full h-full object-cover transition-transform group-hover:scale-105">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <a href="{{ $image->image_url }}" target="_blank" class="p-2 bg-white rounded-full text-on-surface">
-                                        <span class="material-symbols-outlined" data-icon="zoom_in">zoom_in</span>
-                                    </a>
+                            <a href="{{ $image->image_url }}" target="_blank" rel="noopener"
+                               class="group relative aspect-video rounded-xl overflow-hidden border border-outline-variant/15 bg-surface-container block">
+                                <img src="{{ $image->image_url }}" alt="" class="w-full h-full object-cover transition-transform group-hover:scale-105">
+                                <div class="absolute inset-0 bg-on-surface/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-on-primary text-3xl">zoom_in</span>
                                 </div>
-                            </div>
+                            </a>
                         @endforeach
                     </div>
                 @else
-                    <div class="p-12 border-2 border-dashed border-outline-variant/20 rounded-2xl flex flex-col items-center justify-center text-on-surface-variant">
-                        <span class="material-symbols-outlined text-4xl mb-2 opacity-50" data-icon="image_not_supported">image_not_supported</span>
-                        <p class="text-sm font-medium">No images submitted for this report.</p>
+                    <div class="py-12 text-center text-on-surface-variant border-2 border-dashed border-outline-variant/20 rounded-2xl">
+                        <span class="material-symbols-outlined text-4xl opacity-40 block mb-2">image_not_supported</span>
+                        <p class="text-sm font-medium">No images submitted.</p>
                     </div>
                 @endif
-            </div>
+            </x-admin.card>
         </div>
 
-        <!-- Right Column: Status & History -->
-        <div class="space-y-8">
-            <!-- Update Status Card -->
-            <div class="bg-surface-container-lowest p-8 rounded-2xl border border-outline-variant/10 shadow-sm sticky top-24">
-                <h3 class="text-lg font-bold text-on-surface font-heading mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary" data-icon="edit_note">edit_note</span>
-                    Administrative Action
-                </h3>
-
-                <form action="{{ route('admin.reports.update-status', $report->id) }}" method="POST" class="space-y-6">
+        <div class="space-y-6">
+            <x-admin.card title="Update status" class="lg:sticky lg:top-24">
+                <form action="{{ route('admin.reports.update-status', $report->id) }}" method="POST" class="space-y-5 -mt-2">
                     @csrf
                     <div>
-                        <label for="status" class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-2">Update Status</label>
-                        <select name="status" id="status" class="w-full bg-surface-container border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-bold text-on-surface focus:ring-primary focus:border-primary">
-                            <option value="pending" {{ $report->status == 'pending' ? 'selected' : '' }}>PENDING REVIEW</option>
-                            <option value="in_progress" {{ $report->status == 'in_progress' ? 'selected' : '' }}>IN PROGRESS</option>
-                            <option value="resolved" {{ $report->status == 'resolved' ? 'selected' : '' }}>RESOLVED</option>
+                        <label for="status" class="admin-label">Status</label>
+                        <select name="status" id="status" class="admin-input mt-1.5 font-semibold">
+                            <option value="pending" @selected($report->status == 'pending')>Pending review</option>
+                            <option value="in_progress" @selected($report->status == 'in_progress')>In progress</option>
+                            <option value="resolved" @selected($report->status == 'resolved')>Resolved</option>
                         </select>
                     </div>
-
                     <div>
-                        <label for="note" class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-2">Internal Note (Optional)</label>
-                        <textarea name="note" id="note" rows="3" class="w-full bg-surface-container border-outline-variant/20 rounded-xl px-4 py-3 text-sm text-on-surface focus:ring-primary focus:border-primary placeholder:text-on-surface-variant/50" placeholder="Describe actions taken..."></textarea>
+                        <label for="note" class="admin-label">Internal note (optional)</label>
+                        <textarea name="note" id="note" rows="3" class="admin-input mt-1.5 resize-none"
+                                  placeholder="Describe actions taken…"></textarea>
                     </div>
-
-                    <button type="submit" class="w-full bg-primary text-on-primary py-4 rounded-xl text-sm font-black tracking-tight shadow-sm hover:opacity-90 active:scale-95 transition-all">
-                        SUBMIT UPDATE
-                    </button>
+                    <button type="submit" class="admin-btn-primary w-full py-3.5">Save update</button>
                 </form>
 
-                <div class="mt-8 pt-8 border-t border-outline-variant/10">
-                    <h4 class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Status Timeline</h4>
-                    <div class="space-y-6">
+                <div class="mt-8 pt-6 border-t border-outline-variant/10">
+                    <h4 class="admin-label mb-4">Status timeline</h4>
+                    <div class="space-y-5">
                         @forelse($report->statusHistory as $history)
-                            <div class="relative pl-6 border-l-2 border-primary/20">
-                                <div class="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-primary/20 border-2 border-primary"></div>
-                                <div class="flex justify-between items-start mb-1">
+                            <div class="relative pl-5 border-l-2 border-primary/25">
+                                <div class="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-primary ring-4 ring-primary/15"></div>
+                                <div class="flex justify-between gap-2 mb-1">
                                     <span class="text-[10px] font-black text-primary uppercase">{{ str_replace('_', ' ', $history->new_status) }}</span>
-                                    <span class="text-[9px] text-on-surface-variant">{{ $history->created_at->format('M d, H:i') }}</span>
+                                    <span class="text-[10px] text-on-surface-variant">{{ $history->created_at->format('M d, H:i') }}</span>
                                 </div>
-                                <p class="text-xs text-on-surface leading-tight">{{ $history->note ?? 'Status changed by Admin' }}</p>
-                                <p class="text-[9px] font-bold text-on-surface-variant mt-1 uppercase">Admin: {{ $history->changedBy->name ?? 'System' }}</p>
+                                <p class="text-xs text-on-surface">{{ $history->note ?? 'Status changed' }}</p>
+                                <p class="text-[10px] text-on-surface-variant mt-1">{{ $history->changedBy->name ?? 'System' }}</p>
                             </div>
                         @empty
-                            <p class="text-xs text-on-surface-variant italic">No status changes recorded yet.</p>
+                            <p class="text-xs text-on-surface-variant italic">No status changes yet.</p>
                         @endforelse
                     </div>
                 </div>
-            </div>
+            </x-admin.card>
         </div>
     </div>
 </div>
