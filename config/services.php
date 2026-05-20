@@ -41,7 +41,8 @@ return [
     ],
 
     'fcm' => [
-        'service_account' => storage_path('app/firebase-auth.json'),
+        'service_account' => env('FCM_SERVICE_ACCOUNT_PATH', storage_path('app/firebase-auth.json')),
+        'service_account_json' => env('FCM_SERVICE_ACCOUNT_JSON'),
         'project_id' => env('FCM_PROJECT_ID', 'clean-city-3a128'),
     ],
 

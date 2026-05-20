@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Report extends Model
@@ -84,5 +85,37 @@ class Report extends Model
     public function statusHistory()
     {
         return $this->hasMany(StatusHistory::class);
+    }
+
+    public function scopeStatusFilter(Builder $query, ?string $status): Builder
+    {
+        if (blank($status) || $status === 'all') {
+            return $query;
+        }
+
+        return $query->where('status', $status);
+    }
+
+    public function scopeSearch(Builder $query, ?string $search): Builder
+    {
+        if (blank($search)) {
+            return $query;
+        }
+
+        $search = trim($search);
+        $numericId = preg_replace('/^#?CC-?/i', '', $search);
+
+        return $query->where(function (Builder $q) use ($search, $numericId) {
+            if (is_numeric($numericId)) {
+                $q->orWhere('reports.id', (int) $numericId);
+            }
+
+            $like = '%' . $search . '%';
+            $q->orWhere('description', 'like', $like)
+                ->orWhere('location_name', 'like', $like)
+                ->orWhere('title', 'like', $like)
+                ->orWhereHas('user', fn (Builder $u) => $u->where('name', 'like', $like))
+                ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', $like));
+        });
     }
 }

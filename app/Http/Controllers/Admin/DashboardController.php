@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ReportStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\StatusHistory;
+use App\Services\ReportNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DashboardController extends Controller
 {
@@ -36,54 +41,110 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact('stats', 'recentReports', 'mapReports'));
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        $reports = Report::with('category', 'user')
-            ->orderBy('priority_score', 'desc')
-            ->paginate(15);
+        $status = $request->query('status', 'all');
+        $search = $request->query('search');
 
-        return view('admin.reports.index', compact('reports'));
+        $reports = Report::with('category', 'user')
+            ->statusFilter($status)
+            ->search($search)
+            ->orderBy('priority_score', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.reports.index', compact('reports', 'status', 'search'));
     }
 
     public function showReport($id)
     {
         $report = Report::with(['category', 'user', 'images', 'statusHistory.changedBy'])->findOrFail($id);
-        return view('admin.reports.show', compact('report'));
+
+        $currentStatus = ReportStatus::tryFromString($report->status);
+        $allowedNextStatuses = $currentStatus
+            ? $currentStatus->allowedNext()
+            : [];
+
+        return view('admin.reports.show', compact('report', 'allowedNextStatuses', 'currentStatus'));
     }
 
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request, $id, ReportNotificationService $notifications)
     {
         $report = Report::findOrFail($id);
         $oldStatus = $report->status;
 
         $request->validate([
             'status' => 'required|in:pending,in_progress,resolved',
-            'note' => 'nullable|string'
+            'note' => 'nullable|string|max:1000',
         ]);
 
-        $report->status = $request->status;
+        $current = ReportStatus::tryFromString($oldStatus);
+        $next = ReportStatus::tryFromString($request->status);
+
+        if (!$current || !$next) {
+            throw ValidationException::withMessages([
+                'status' => 'Invalid report status.',
+            ]);
+        }
+
+        if ($current === $next) {
+            return redirect()->back()->with('success', 'Status is already ' . $current->label() . '.');
+        }
+
+        if (!$current->canTransitionTo($next)) {
+            throw ValidationException::withMessages([
+                'status' => "Cannot change status from {$current->label()} back to {$next->label()}. "
+                    . 'Workflow only moves forward: Pending review → In review → Resolved.',
+            ]);
+        }
+
+        $report->status = $next->value;
         $report->save();
 
-        // Log the status change
         StatusHistory::create([
             'report_id' => $report->id,
             'changed_by' => auth()->id(),
             'old_status' => $oldStatus,
-            'new_status' => $request->status,
-            'note' => $request->note
+            'new_status' => $next->value,
+            'note' => $request->note,
         ]);
 
-        // Send Push Notification to Citizen
-        if ($report->user && $report->user->fcm_token) {
-            \App\Services\FcmService::send(
-                $report->user->fcm_token,
-                "Report Update: " . ucfirst($request->status),
-                "Your report '{$report->category->name}' has been updated to " . str_replace('_', ' ', $request->status) . ".",
-                ['report_id' => $report->id]
-            );
-        }
+        $notifications->notifyStatusChanged($report, $oldStatus, $next->value, auth()->id());
 
-        return redirect()->back()->with('success', 'Report status updated successfully.');
+        return redirect()->back()->with('success', 'Status updated to ' . $next->label() . '. Citizen notified.');
+    }
+
+    public function exportReports(Request $request): StreamedResponse
+    {
+        $status = $request->query('status', 'all');
+        $search = $request->query('search');
+
+        $filename = 'reports-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($status, $search) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Report ID', 'Submitted', 'Citizen', 'Category', 'Status', 'Priority', 'Location']);
+
+            Report::with(['category', 'user'])
+                ->statusFilter($status)
+                ->search($search)
+                ->orderByDesc('created_at')
+                ->chunk(200, function ($chunk) use ($handle) {
+                    foreach ($chunk as $report) {
+                        fputcsv($handle, [
+                            '#CC-' . str_pad((string) $report->id, 4, '0', STR_PAD_LEFT),
+                            $report->created_at->format('Y-m-d H:i'),
+                            $report->user->name ?? 'Anonymous',
+                            $report->category->name ?? 'Uncategorized',
+                            $report->status,
+                            $report->priority_score,
+                            $report->location_name ?? "{$report->latitude}, {$report->longitude}",
+                        ]);
+                    }
+                });
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     /**
@@ -112,6 +173,54 @@ class DashboardController extends Controller
         ];
 
         return view('admin.analytics', compact('analytics'));
+    }
+
+    public function exportAnalytics(): StreamedResponse
+    {
+        $isPgSql = DB::getDriverName() === 'pgsql';
+        $filename = 'analytics-' . now()->format('Y-m-d-His') . '.csv';
+
+        $byCategory = Report::join('categories', 'reports.category_id', '=', 'categories.id')
+            ->select(DB::raw('categories.name as label, count(*) as value'))
+            ->groupBy('categories.name')
+            ->get();
+
+        $monthly = Report::select($isPgSql
+            ? DB::raw('TO_CHAR(created_at, \'Mon YYYY\') as month, count(*) as count')
+            : DB::raw('DATE_FORMAT(created_at, "%b %Y") as month, count(*) as count'))
+            ->where('created_at', '>=', now()->subMonths(6))
+            ->groupBy('month')
+            ->orderBy(DB::raw('MIN(created_at)'))
+            ->get();
+
+        $total = Report::count();
+        $resolved = Report::where('status', 'resolved')->count();
+
+        return response()->streamDownload(function () use ($byCategory, $monthly, $total, $resolved) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['Summary']);
+            fputcsv($handle, ['Total reports', $total]);
+            fputcsv($handle, ['Resolved', $resolved]);
+            fputcsv($handle, ['Resolution rate %', $total > 0 ? round(($resolved / $total) * 100, 1) : 0]);
+            fputcsv($handle, ['Avg priority', round((float) Report::avg('priority_score'), 1)]);
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Reports by category']);
+            fputcsv($handle, ['Category', 'Count']);
+            foreach ($byCategory as $row) {
+                fputcsv($handle, [$row->label, $row->value]);
+            }
+            fputcsv($handle, []);
+
+            fputcsv($handle, ['Monthly volume (last 6 months)']);
+            fputcsv($handle, ['Month', 'Count']);
+            foreach ($monthly as $row) {
+                fputcsv($handle, [$row->month, $row->count]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     /**
@@ -143,5 +252,32 @@ class DashboardController extends Controller
             ->paginate(20);
 
         return view('admin.audit', compact('logs'));
+    }
+
+    public function exportAudit(Request $request): StreamedResponse
+    {
+        $filename = 'audit-logs-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Date', 'Administrator', 'Report ID', 'Old status', 'New status', 'Note']);
+
+            StatusHistory::with(['report', 'changedBy'])
+                ->orderByDesc('created_at')
+                ->chunk(200, function ($chunk) use ($handle) {
+                    foreach ($chunk as $log) {
+                        fputcsv($handle, [
+                            $log->created_at->format('Y-m-d H:i'),
+                            $log->changedBy->name ?? 'System',
+                            $log->report_id,
+                            $log->old_status,
+                            $log->new_status,
+                            $log->note ?? '',
+                        ]);
+                    }
+                });
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 }

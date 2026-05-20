@@ -66,8 +66,8 @@ class FcmService
     private static function getAccessToken()
     {
         return Cache::remember('fcm_access_token', 3500, function () {
-            $configJson = env('FCM_SERVICE_ACCOUNT_JSON');
-            
+            $configJson = config('services.fcm.service_account_json');
+
             if ($configJson) {
                 // Support both raw JSON and base64 encoded JSON
                 $decoded = base64_decode($configJson, true);
@@ -77,7 +77,8 @@ class FcmService
                     $config = json_decode($configJson, true);
                 }
             } else {
-                $path = config('services.fcm.service_account');
+                $path = config('services.fcm.service_account')
+                    ?? storage_path('app/firebase-auth.json');
                 
                 if (!file_exists($path)) {
                     Log::error("FCM: Service account credentials not found in env or at " . $path);

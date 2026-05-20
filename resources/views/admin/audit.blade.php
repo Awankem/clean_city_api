@@ -10,14 +10,10 @@
         description="Transparency log of administrative actions and status changes."
     >
         <x-slot:actions>
-            <button type="button" class="admin-btn-secondary py-2.5 opacity-70 cursor-default" title="Coming soon">
-                <span class="material-symbols-outlined text-lg">filter_alt</span>
-                Filter
-            </button>
-            <button type="button" class="admin-btn-secondary py-2.5 opacity-70 cursor-default" title="Coming soon">
+            <a href="{{ route('admin.audit.export') }}" class="admin-btn-secondary py-2.5">
                 <span class="material-symbols-outlined text-lg">download</span>
                 Export CSV
-            </button>
+            </a>
         </x-slot:actions>
     </x-admin.page-header>
 

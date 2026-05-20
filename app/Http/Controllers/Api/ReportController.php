@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ReportNotificationService;
 use App\Models\Category;
 use App\Models\Report;
 use App\Models\ReportImage;
@@ -26,7 +27,7 @@ class ReportController extends Controller
     /**
      * Submit a new report.
      */
-    public function store(Request $request)
+    public function store(Request $request, ReportNotificationService $notifications)
     {
         $validator = Validator::make($request->all(), [
             'category_id' => 'required|exists:categories,id',
@@ -43,7 +44,7 @@ class ReportController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($request, $notifications) {
                 // 0. Geofencing check (Example for a specific city boundary)
                 // Roughly checking if within a box - adjust to your city's bounds
                 $lat = (float) $request->latitude;
@@ -127,8 +128,9 @@ class ReportController extends Controller
 
                 $report->refresh();
 
-                // 5. Dispatch Real-time Event
+                // 5. Real-time + push notifications
                 event(new \App\Events\ReportSubmitted($report));
+                $notifications->notifyAdminsNewReport($report);
 
                 return response()->json($report->load('images', 'category', 'statusHistory'), 201);
 

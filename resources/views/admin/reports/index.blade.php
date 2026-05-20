@@ -10,6 +10,10 @@
         description="Review and manage citizen-submitted waste issues."
     >
         <x-slot:actions>
+            <a href="{{ route('admin.reports.export', request()->only(['search', 'status'])) }}" class="admin-btn-secondary py-2.5">
+                <span class="material-symbols-outlined text-lg">download</span>
+                Export CSV
+            </a>
             <span class="inline-flex items-center gap-2 text-sm font-bold bg-surface-container-lowest px-4 py-2.5 rounded-xl border border-outline-variant/15">
                 <span class="text-on-surface-variant text-xs uppercase">Total</span>
                 <span class="text-primary text-lg">{{ $reports->total() }}</span>
@@ -17,16 +21,33 @@
         </x-slot:actions>
     </x-admin.page-header>
 
+    @if($search)
+        <p class="text-sm text-on-surface-variant">
+            Showing results for <strong class="text-on-surface">"{{ $search }}"</strong>
+            — <a href="{{ route('admin.reports.index', request()->only('status')) }}" class="text-primary font-bold hover:underline">Clear search</a>
+        </p>
+    @endif
+
     <div class="admin-card p-4 flex flex-wrap gap-3 items-center">
         <span class="inline-flex items-center gap-2 text-xs font-bold text-on-surface-variant">
             <span class="material-symbols-outlined text-base">filter_list</span>
             Status
         </span>
         <div class="flex flex-wrap gap-2">
-            <span class="px-3 py-1.5 bg-primary text-on-primary rounded-full text-[10px] font-bold uppercase tracking-wider">All</span>
-            <span class="px-3 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-[10px] font-bold uppercase tracking-wider cursor-default opacity-70" title="Coming soon">Pending</span>
-            <span class="px-3 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-[10px] font-bold uppercase tracking-wider cursor-default opacity-70">In progress</span>
-            <span class="px-3 py-1.5 bg-surface-container-high text-on-surface-variant rounded-full text-[10px] font-bold uppercase tracking-wider cursor-default opacity-70">Resolved</span>
+            @php
+                $filters = [
+                    'all' => 'All',
+                    'pending' => 'Pending',
+                    'in_progress' => 'In review',
+                    'resolved' => 'Resolved',
+                ];
+            @endphp
+            @foreach($filters as $value => $label)
+                <a href="{{ route('admin.reports.index', array_filter(['status' => $value === 'all' ? null : $value, 'search' => $search ?: null])) }}"
+                   class="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors {{ ($status ?? 'all') === $value ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
         </div>
     </div>
 

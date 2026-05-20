@@ -322,21 +322,30 @@
                     enabledTransports: ['ws', 'wss'],
                 });
 
-                window.Echo.channel('hotspots').listen('.report.submitted', (data) => {
-                    const newReport = {
-                        id: data.report.id,
-                        lat: parseFloat(data.report.latitude),
-                        lng: parseFloat(data.report.longitude),
-                        priority: parseFloat(data.report.priority_score),
-                        category: data.report.category?.name || 'Uncategorized',
-                        status: data.report.status,
-                        location_name: data.report.location_name,
-                        image: null, // New ones might not have images yet in real-time payload
+                const pushHotspot = (report) => {
+                    const idx = this.allHotspots.findIndex(h => h.id === report.id);
+                    const entry = {
+                        id: report.id,
+                        lat: parseFloat(report.latitude),
+                        lng: parseFloat(report.longitude),
+                        priority: parseFloat(report.priority_score),
+                        category: report.category?.name || 'Uncategorized',
+                        status: report.status,
+                        location_name: report.location_name,
+                        image: null,
                         created_at: 'Just now'
                     };
-                    this.allHotspots.unshift(newReport);
+                    if (idx >= 0) {
+                        this.allHotspots[idx] = { ...this.allHotspots[idx], ...entry };
+                    } else {
+                        this.allHotspots.unshift(entry);
+                    }
                     this.updateMapData();
-                });
+                };
+
+                window.Echo.channel('hotspots')
+                    .listen('.report.submitted', (data) => pushHotspot(data.report))
+                    .listen('.report.status.changed', (data) => pushHotspot(data.report));
             },
 
             initMap() {

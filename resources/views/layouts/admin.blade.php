@@ -55,15 +55,14 @@
         </div>
 
         <div class="flex items-center gap-2 md:gap-3 shrink-0">
-            <div class="hidden md:flex items-center gap-2 bg-surface-container rounded-xl px-3 py-2 border border-outline-variant/10 w-56 lg:w-64">
+            <form action="{{ route('admin.reports.index') }}" method="GET" class="flex items-center gap-2 bg-surface-container rounded-xl px-3 py-2 border border-outline-variant/10 w-40 sm:w-56 lg:w-64">
                 <span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
-                <input type="search" class="bg-transparent border-0 text-sm text-on-surface w-full focus:ring-0 p-0 placeholder:text-on-surface-variant/70"
+                <input type="search" name="search" value="{{ request('search') }}"
+                       class="bg-transparent border-0 text-sm text-on-surface w-full focus:ring-0 p-0 placeholder:text-on-surface-variant/70"
                        placeholder="Search reports…" aria-label="Search reports">
-            </div>
+            </form>
 
-            <button type="button" class="w-10 h-10 flex items-center justify-center rounded-xl text-on-surface-variant hover:bg-surface-container transition-colors" title="Notifications">
-                <span class="material-symbols-outlined">notifications</span>
-            </button>
+            @include('layouts.partials.admin-notifications')
 
             <div class="hidden sm:flex items-center gap-2 pl-2 border-l border-outline-variant/15">
                 <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=00482f&color=fff&size=80"

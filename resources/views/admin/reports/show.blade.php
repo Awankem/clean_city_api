@@ -78,14 +78,36 @@
 
         <div class="space-y-6">
             <x-admin.card title="Update status" class="lg:sticky lg:top-24">
+                @if($errors->has('status'))
+                    <div class="mb-4 p-3 rounded-xl bg-tertiary/10 border border-tertiary/20 text-tertiary text-sm font-semibold flex gap-2 -mt-2">
+                        <span class="material-symbols-outlined text-lg shrink-0">info</span>
+                        {{ $errors->first('status') }}
+                    </div>
+                @endif
+
+                @if(count($allowedNextStatuses) === 0)
+                    <div class="space-y-3 -mt-2">
+                        <p class="text-sm text-on-surface-variant">
+                            This report is <strong class="text-on-surface">{{ $currentStatus?->label() ?? ucfirst($report->status) }}</strong>.
+                            Final statuses cannot be changed.
+                        </p>
+                        <div class="admin-input mt-0 font-semibold bg-surface-container-low cursor-not-allowed opacity-80">
+                            {{ $currentStatus?->label() ?? $report->status }}
+                        </div>
+                    </div>
+                @else
                 <form action="{{ route('admin.reports.update-status', $report->id) }}" method="POST" class="space-y-5 -mt-2">
                     @csrf
                     <div>
-                        <label for="status" class="admin-label">Status</label>
-                        <select name="status" id="status" class="admin-input mt-1.5 font-semibold">
-                            <option value="pending" @selected($report->status == 'pending')>Pending review</option>
-                            <option value="in_progress" @selected($report->status == 'in_progress')>In progress</option>
-                            <option value="resolved" @selected($report->status == 'resolved')>Resolved</option>
+                        <label for="status" class="admin-label">Next status</label>
+                        <p class="text-xs text-on-surface-variant mb-2">
+                            Current: <strong>{{ $currentStatus?->label() }}</strong>
+                            — only forward moves are allowed.
+                        </p>
+                        <select name="status" id="status" class="admin-input mt-1 font-semibold" required>
+                            @foreach($allowedNextStatuses as $nextStatus)
+                                <option value="{{ $nextStatus->value }}">{{ $nextStatus->label() }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
@@ -93,8 +115,9 @@
                         <textarea name="note" id="note" rows="3" class="admin-input mt-1.5 resize-none"
                                   placeholder="Describe actions taken…"></textarea>
                     </div>
-                    <button type="submit" class="admin-btn-primary w-full py-3.5">Save update</button>
+                    <button type="submit" class="admin-btn-primary w-full py-3.5">Save & notify citizen</button>
                 </form>
+                @endif
 
                 <div class="mt-8 pt-6 border-t border-outline-variant/10">
                     <h4 class="admin-label mb-4">Status timeline</h4>

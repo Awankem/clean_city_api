@@ -14,10 +14,10 @@
                 <span class="material-symbols-outlined text-lg">calendar_month</span>
                 Last 30 days
             </button>
-            <button type="button" class="admin-btn-primary py-2.5 opacity-80 cursor-default" title="Export coming soon">
+            <a href="{{ route('admin.analytics.export') }}" class="admin-btn-primary py-2.5">
                 <span class="material-symbols-outlined text-lg">download</span>
-                Export
-            </button>
+                Export CSV
+            </a>
         </x-slot:actions>
     </x-admin.page-header>
 
