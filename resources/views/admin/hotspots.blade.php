@@ -448,7 +448,7 @@
                 this.filteredHotspots.forEach(h => {
                     const el = document.createElement('div');
                     el.className = 'custom-marker';
-                    const color = h.priority > 7 ? '#ff5252' : (h.priority > 4 ? '#ffb74d' : '#4caf50');
+                    const color = h.status === 'pending' ? '#ff5252' : (h.status === 'in_progress' ? '#ffb74d' : '#4caf50');
                     
                     el.innerHTML = `
                         <div class="relative flex items-center justify-center" style="width: 24px; height: 24px;">
