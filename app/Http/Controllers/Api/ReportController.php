@@ -146,10 +146,24 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        $user = $request->user();
+
         $reports = Report::with(['category', 'images'])
-            ->whereIn('status', ['pending', 'in_progress'])
+            ->withCount('votes as upvotes_count')
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('status', $request->query('status'));
+            })
+            ->orderByDesc('created_at')
             ->get()
-            ->map(fn($r) => $this->appendImageUrls($r));
+            ->map(function ($report) use ($user) {
+                $report = $this->appendImageUrls($report);
+                if ($user) {
+                    $report->user_has_voted = ReportVote::where('report_id', $report->id)
+                        ->where('user_id', $user->id)
+                        ->exists();
+                }
+                return $report;
+            });
 
         return response()->json($reports);
     }
@@ -161,6 +175,10 @@ class ReportController extends Controller
     {
         $user = $request->user();
         $report = Report::findOrFail($id);
+
+        if ((int) $report->user_id === (int) $user->id) {
+            return response()->json(['message' => 'You cannot upvote your own report'], 403);
+        }
 
         // Check if user already voted
         $exists = ReportVote::where('report_id', $id)->where('user_id', $user->id)->exists();
@@ -210,10 +228,21 @@ class ReportController extends Controller
     /**
      * Get report details for tracking.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        $report = Report::with(['category', 'images', 'statusHistory.changedBy'])->findOrFail($id);
-        return response()->json($this->appendImageUrls($report));
+        $report = Report::with(['category', 'images', 'statusHistory.changedBy'])
+            ->withCount('votes as upvotes_count')
+            ->findOrFail($id);
+
+        $report = $this->appendImageUrls($report);
+
+        if ($request->user()) {
+            $report->user_has_voted = ReportVote::where('report_id', $report->id)
+                ->where('user_id', $request->user()->id)
+                ->exists();
+        }
+
+        return response()->json($report);
     }
 
     /**
@@ -221,7 +250,7 @@ class ReportController extends Controller
      */
     public function userReports(Request $request)
     {
-        $reports = Report::with(['category', 'images', 'statusHistory'])
+        $reports = Report::with(['category', 'images', 'statusHistory.changedBy'])
             ->where('user_id', $request->user()->id)
             ->orderBy('created_at', 'desc')
             ->get()

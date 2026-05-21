@@ -526,10 +526,17 @@
             },
 
             flyTo(spot) {
+                if (this.viewMode !== 'markers') {
+                    this.viewMode = 'markers';
+                    this.toggleViewMode();
+                }
                 this.map.flyTo({ center: [spot.lng, spot.lat], zoom: 16, pitch: 60 });
-                // Find and open popup
-                const marker = this.markers.find(m => m.getLngLat().lng === spot.lng && m.getLngLat().lat === spot.lat);
-                if (marker) marker.togglePopup();
+                
+                // Find and open popup after a small delay to ensure markers are fully rendered
+                setTimeout(() => {
+                    const marker = this.markers.find(m => m.getLngLat().lng === spot.lng && m.getLngLat().lat === spot.lat);
+                    if (marker && !marker.getPopup().isOpen()) marker.togglePopup();
+                }, 100);
             },
 
             centerOnCity() {
