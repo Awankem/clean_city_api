@@ -51,8 +51,8 @@ class LoginController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // For non-admins, we could redirect to a citizen dashboard if it existed.
-        return redirect()->intended('/');
+        Auth::logout();
+        return redirect()->route('login')->with('error', 'Unauthorized access. Only admins can use this portal.');
     }
 
     /**

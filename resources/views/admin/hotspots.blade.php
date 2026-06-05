@@ -172,6 +172,34 @@
                     </div>
                 </div>
 
+                <!-- Directions Panel -->
+                <div x-show="directionsActive" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="translate-y-full opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-y-0 opacity-100" x-transition:leave-end="translate-y-full opacity-0" class="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
+                    <div class="bg-surface-container-lowest/95 backdrop-blur-xl px-8 py-5 rounded-[32px] border border-primary/20 shadow-2xl min-w-[420px]">
+                        <div class="flex items-center gap-6">
+                            <div class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-primary text-2xl">directions</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Route Active</p>
+                                <p class="text-sm font-black text-on-surface truncate" x-text="directionsDestination"></p>
+                                <div class="flex items-center gap-4 mt-1">
+                                    <span class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">straighten</span>
+                                        <span x-text="directionsDistance"></span>
+                                    </span>
+                                    <span class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-sm">schedule</span>
+                                        <span x-text="directionsDuration"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <button @click="clearDirections()" class="w-10 h-10 bg-error/10 hover:bg-error/20 text-error rounded-xl flex items-center justify-center transition-colors active:scale-90 shrink-0" title="Cancel route">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bottom HUD -->
                 <div class="flex justify-between items-end pointer-events-none">
                     <!-- Legend Overlay -->
@@ -259,6 +287,72 @@
         0% { transform: scale(0.5); opacity: 0.8; }
         100% { transform: scale(2.5); opacity: 0; }
     }
+
+    /* Admin location marker */
+    .admin-location-marker {
+        width: 28px;
+        height: 28px;
+        cursor: pointer;
+    }
+    .admin-marker-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        background: #4285F4;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(66,133,244,0.5);
+        z-index: 2;
+    }
+    .admin-marker-ring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 28px;
+        height: 28px;
+        background: rgba(66,133,244,0.15);
+        border-radius: 50%;
+        animation: admin-pulse 2s ease-out infinite;
+    }
+    @keyframes admin-pulse {
+        0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+        100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+    }
+
+    /* Directions button in popup */
+    .directions-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        padding: 10px 16px;
+        background: linear-gradient(135deg, #4285F4, #3367D6);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .directions-btn:hover {
+        background: linear-gradient(135deg, #3367D6, #2851A3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(66,133,244,0.4);
+    }
+    .directions-btn:active {
+        transform: scale(0.97);
+    }
+    .directions-btn .material-symbols-outlined {
+        font-size: 16px;
+    }
 </style>
 @endsection
 
@@ -293,6 +387,14 @@
             allHotspots: @json($hotspotData),
             map: null,
             markers: [],
+            // Admin location & directions state
+            adminLocation: null,
+            adminMarker: null,
+            directionsActive: false,
+            directionsDestination: '',
+            directionsDistance: '',
+            directionsDuration: '',
+            activeRouteSpotId: null,
 
             get filteredHotspots() {
                 return this.allHotspots.filter(h => {
@@ -308,8 +410,16 @@
 
             init() {
                 this.initMap();
+                this.trackAdminLocation();
                 this.$watch('filters', () => this.updateMapData(), { deep: true });
                 this.$watch('viewMode', () => this.toggleViewMode());
+
+                // Listen for directions request from map popups
+                window.addEventListener('request-directions', (e) => {
+                    if (e.detail && e.detail.id) {
+                        this.getDirections(e.detail.id);
+                    }
+                });
                 
                 // Real-time updates
                 window.Pusher = Pusher;
@@ -494,6 +604,10 @@
                                     <p class="text-xs font-black text-on-surface">${h.created_at}</p>
                                 </div>
                             </div>
+                            <button class="directions-btn" onclick="window.dispatchEvent(new CustomEvent('request-directions', { detail: { id: ${h.id} } }))">
+                                <span class="material-symbols-outlined">directions</span>
+                                Get Directions
+                            </button>
                         </div>
                     </div>
                 `;
@@ -508,10 +622,14 @@
 
             setMapStyle(style) {
                 this.mapStyle = style;
+                this.clearDirections();
+                this.adminMarker?.remove();
+                this.adminMarker = null;
                 this.map.setStyle('mapbox://styles/mapbox/' + style);
                 // Wait for style to load before re-adding layers
                 this.map.once('style.load', () => {
                     this.initMap(); // Re-init core layers
+                    this.updateAdminMarker(); // Re-add admin location
                 });
             },
 
@@ -541,8 +659,171 @@
 
             centerOnCity() {
                 this.map.flyTo({ center: [-0.1870, 5.6037], zoom: 12, pitch: 45 });
+            },
+
+            // ── Directions Feature ──────────────────────────────
+
+            trackAdminLocation() {
+                if (!navigator.geolocation) return;
+
+                const onPosition = (pos) => {
+                    this.adminLocation = {
+                        lng: pos.coords.longitude,
+                        lat: pos.coords.latitude
+                    };
+                    this.updateAdminMarker();
+
+                    // Live-update the route if directions are currently active
+                    if (this.directionsActive && this.activeRouteSpotId) {
+                        this.getDirections(this.activeRouteSpotId, false);
+                    }
+                };
+
+                navigator.geolocation.getCurrentPosition(onPosition, () => {}, {
+                    enableHighAccuracy: true
+                });
+
+                navigator.geolocation.watchPosition(onPosition, () => {}, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000
+                });
+            },
+
+            updateAdminMarker() {
+                if (!this.adminLocation) return;
+
+                if (this.adminMarker) {
+                    this.adminMarker.setLngLat([this.adminLocation.lng, this.adminLocation.lat]);
+                    return;
+                }
+
+                const el = document.createElement('div');
+                el.className = 'admin-location-marker';
+                el.innerHTML = `
+                    <div class="admin-marker-ring"></div>
+                    <div class="admin-marker-dot"></div>
+                `;
+
+                this.adminMarker = new mapboxgl.Marker(el)
+                    .setLngLat([this.adminLocation.lng, this.adminLocation.lat])
+                    .addTo(this.map);
+            },
+
+            getDirections(spotId, isNewRoute = true) {
+                const spot = this.allHotspots.find(h => h.id === spotId);
+                if (!spot) return;
+
+                if (!this.adminLocation) {
+                    if (isNewRoute) alert('Unable to get your current location. Please allow location access and try again.');
+                    return;
+                }
+
+                // Close any open popups only if this is a manual click
+                if (isNewRoute) {
+                    this.markers.forEach(m => {
+                        if (m.getPopup() && m.getPopup().isOpen()) m.togglePopup();
+                    });
+                }
+
+                this.activeRouteSpotId = spotId;
+                this.directionsDestination = spot.location_name || spot.category;
+
+                const origin = `${this.adminLocation.lng},${this.adminLocation.lat}`;
+                const destination = `${spot.lng},${spot.lat}`;
+                const token = mapboxgl.accessToken;
+                const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${origin};${destination}?geometries=geojson&overview=full&access_token=${token}`;
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.routes || !data.routes.length) {
+                            if (isNewRoute) alert('No route found between your location and this report.');
+                            return;
+                        }
+
+                        const route = data.routes[0];
+                        const distKm = (route.distance / 1000).toFixed(1);
+                        const durMin = Math.round(route.duration / 60);
+
+                        this.directionsDistance = distKm > 1 ? `${distKm} km` : `${Math.round(route.distance)} m`;
+                        this.directionsDuration = durMin >= 60 ? `${Math.floor(durMin/60)}h ${durMin%60}m` : `${durMin} min`;
+
+                        this.drawRoute(route.geometry);
+                        this.directionsActive = true;
+
+                        // Fit map to show entire route only for the initial request
+                        if (isNewRoute) {
+                            const coords = route.geometry.coordinates;
+                            const bounds = coords.reduce(
+                                (b, c) => b.extend(c),
+                                new mapboxgl.LngLatBounds(coords[0], coords[0])
+                            );
+                            this.map.fitBounds(bounds, { padding: 120, pitch: 45 });
+                        }
+                    })
+                    .catch(() => {
+                        if (isNewRoute) alert('Failed to fetch directions. Please try again.');
+                    });
+            },
+
+            drawRoute(geometry) {
+                // Remove existing route
+                this.removeRouteLayer();
+
+                // Route outline (wider, darker)
+                this.map.addSource('directions-route', {
+                    type: 'geojson',
+                    data: { type: 'Feature', properties: {}, geometry }
+                });
+
+                this.map.addLayer({
+                    id: 'directions-route-outline',
+                    type: 'line',
+                    source: 'directions-route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#1a56db',
+                        'line-width': 10,
+                        'line-opacity': 0.3
+                    }
+                });
+
+                // Route core line (bright blue)
+                this.map.addLayer({
+                    id: 'directions-route-line',
+                    type: 'line',
+                    source: 'directions-route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#4285F4',
+                        'line-width': 5,
+                        'line-opacity': 0.9
+                    }
+                });
+            },
+
+            removeRouteLayer() {
+                if (this.map.getLayer('directions-route-line')) this.map.removeLayer('directions-route-line');
+                if (this.map.getLayer('directions-route-outline')) this.map.removeLayer('directions-route-outline');
+                if (this.map.getSource('directions-route')) this.map.removeSource('directions-route');
+            },
+
+            clearDirections() {
+                this.removeRouteLayer();
+                this.directionsActive = false;
+                this.activeRouteSpotId = null;
+                this.directionsDestination = '';
+                this.directionsDistance = '';
+                this.directionsDuration = '';
             }
         };
     }
+
 </script>
 @endsection

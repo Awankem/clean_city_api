@@ -57,6 +57,7 @@ class RegisterController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        return redirect('/');
+        Auth::logout();
+        return redirect()->route('login')->with('error', 'Unauthorized access. Only admins can use this portal.');
     }
 }
