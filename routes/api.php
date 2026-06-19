@@ -24,6 +24,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reports/{id}/upvote', [ReportController::class, 'upvote']);
 });
 
+Route::get('/run-migrations', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return 'Migrations successfully run!';
+    } catch (\Exception $e) {
+        return 'Migration error: ' . $e->getMessage();
+    }
+});
+
 Route::get('/seed-categories', function () {
     \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'CategorySeeder', '--force' => true]);
     return 'Categories successfully seeded!';
