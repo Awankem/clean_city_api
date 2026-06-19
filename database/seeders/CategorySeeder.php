@@ -40,11 +40,11 @@ class CategorySeeder extends Seeder
             ],
         ];
 
-        // Clear existing categories to remove duplicates
-        \App\Models\Category::truncate();
+        // Delete existing categories (works with PostgreSQL foreign keys unlike truncate)
+        \App\Models\Category::query()->delete();
 
         foreach ($categories as $category) {
-            \App\Models\Category::create($category);
+            \App\Models\Category::firstOrCreate(['name' => $category['name']], $category);
         }
     }
 }
