@@ -40,6 +40,9 @@ class CategorySeeder extends Seeder
             ],
         ];
 
+        // Clear existing categories to remove duplicates
+        \App\Models\Category::truncate();
+
         foreach ($categories as $category) {
             \App\Models\Category::create($category);
         }
