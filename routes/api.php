@@ -38,6 +38,28 @@ Route::get('/seed-categories', function () {
     return 'Categories successfully seeded!';
 });
 
+Route::get('/clean-categories', function () {
+    try {
+        $duplicates = \App\Models\Category::all()->groupBy('name');
+        $deletedCount = 0;
+        foreach ($duplicates as $name => $items) {
+            if ($items->count() > 1) {
+                $keepId = $items->first()->id;
+                $duplicateIds = $items->slice(1)->pluck('id');
+                
+                // Re-associate any reports linked to duplicate categories to the kept category ID
+                \App\Models\Report::whereIn('category_id', $duplicateIds)->update(['category_id' => $keepId]);
+                
+                // Delete the duplicate categories
+                $deletedCount += \App\Models\Category::whereIn('id', $duplicateIds)->delete();
+            }
+        }
+        return "Cleaned up $deletedCount duplicate categories successfully!";
+    } catch (\Exception $e) {
+        return 'Cleanup error: ' . $e->getMessage();
+    }
+});
+
 
 Route::get('/debug-logs', function () {
     $logPath = storage_path('logs/laravel.log');
