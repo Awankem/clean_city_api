@@ -21,7 +21,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reports', [ReportController::class, 'store']);
     Route::get('/my-reports', [ReportController::class, 'userReports']);
     Route::get('/reports/{id}', [ReportController::class, 'show']);
+    Route::get('/reports/{id}/upvote', [ReportController::class, 'upvote']); // Changed from post to get if needed, or leave post - Wait, it was post before:
     Route::post('/reports/{id}/upvote', [ReportController::class, 'upvote']);
+
+    // Chat
+    Route::get('/reports/{id}/chat', [\App\Http\Controllers\Api\ChatController::class, 'index']);
+    Route::post('/reports/{id}/chat', [\App\Http\Controllers\Api\ChatController::class, 'store']);
+    Route::post('/reports/{id}/chat/read', [\App\Http\Controllers\Api\ChatController::class, 'markRead']);
+    Route::get('/chat/unread', [\App\Http\Controllers\Api\ChatController::class, 'unreadCount']);
 });
 
 Route::get('/run-migrations', function () {

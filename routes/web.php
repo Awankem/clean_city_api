@@ -25,6 +25,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/reports/{id}', [DashboardController::class, 'showReport'])->name('reports.show');
     Route::post('/reports/{id}/status', [DashboardController::class, 'updateStatus'])->name('reports.update-status');
 
+    // Chat
+    Route::get('/reports/{id}/chat', [\App\Http\Controllers\Admin\ChatController::class, 'show'])->name('chat.show');
+    Route::post('/reports/{id}/chat', [\App\Http\Controllers\Admin\ChatController::class, 'store'])->name('chat.store');
+    Route::post('/reports/{id}/chat/read', [\App\Http\Controllers\Admin\ChatController::class, 'markRead'])->name('chat.read');
+
     Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics');
     Route::get('/analytics/export', [DashboardController::class, 'exportAnalytics'])->name('analytics.export');
     Route::get('/hotspots', [DashboardController::class, 'hotspots'])->name('hotspots');

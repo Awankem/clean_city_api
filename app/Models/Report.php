@@ -87,6 +87,16 @@ class Report extends Model
         return $this->hasMany(StatusHistory::class);
     }
 
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class);
+    }
+
+    public function getUnreadMessagesCountAttribute()
+    {
+        return $this->chatMessages()->where('is_read', false)->where('sender_id', '!=', auth()->id())->count();
+    }
+
     public function scopeStatusFilter(Builder $query, ?string $status): Builder
     {
         if (blank($status) || $status === 'all') {

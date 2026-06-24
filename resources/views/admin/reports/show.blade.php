@@ -17,6 +17,16 @@
             </p>
         </div>
         <x-admin.status-badge :status="$report->status" class="shrink-0" />
+        
+        <a href="{{ route('admin.chat.show', $report->id) }}" class="shrink-0 admin-btn-secondary flex items-center gap-2">
+            <span class="material-symbols-outlined">chat</span>
+            <span>Chat</span>
+            @if($report->unread_messages_count > 0)
+                <span class="bg-error text-on-error text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                    {{ $report->unread_messages_count }}
+                </span>
+            @endif
+        </a>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

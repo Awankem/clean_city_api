@@ -85,6 +85,33 @@ class ReportNotificationService
         }
     }
 
+    public function notifyChatMessage(\App\Models\ChatMessage $message, bool $isFromAdmin): void
+    {
+        $report = $message->report;
+
+        if ($isFromAdmin) {
+            // Admin replied, notify citizen via FCM
+            $citizen = $report->user;
+            if ($citizen && $citizen->fcm_token) {
+                $title = "New message from Admin";
+                $body = "Report #CC-" . str_pad((string) $report->id, 4, '0', STR_PAD_LEFT) . ": " . \Illuminate\Support\Str::limit($message->message, 50);
+                
+                FcmService::send($citizen->fcm_token, $title, $body, [
+                    'type' => 'chat_message',
+                    'report_id' => (string) $report->id,
+                ]);
+            }
+        } else {
+            // Citizen replied, notify admins via AdminNotification
+            $this->storeForAdmins(
+                type: 'chat_message',
+                title: 'New message from ' . ($message->sender->name ?? 'Citizen'),
+                message: "Report #CC-" . str_pad((string) $report->id, 4, '0', STR_PAD_LEFT) . ": " . \Illuminate\Support\Str::limit($message->message, 50),
+                reportId: $report->id,
+            );
+        }
+    }
+
     private function storeForAdmins(
         string $type,
         string $title,
